@@ -13,14 +13,15 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
 };
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
@@ -76,6 +77,17 @@ export default function FAQScreen() {
     }
   };
 
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'Requests': return COLORS.primary;
+      case 'Expenses': return COLORS.mediumBlue;
+      case 'Flights': return COLORS.lightBlue;
+      case 'Hotels': return COLORS.darkBlue;
+      case 'Emergency': return '#EF4444';
+      default: return COLORS.gray;
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -89,12 +101,14 @@ export default function FAQScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>FAQ</Text>
-        <View style={styles.placeholder} />
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>FAQ</Text>
+          <View style={styles.placeholder} />
+        </View>
       </View>
 
       {/* Category Filters */}
@@ -134,7 +148,9 @@ export default function FAQScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {filteredFaqs.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="help-circle-outline" size={48} color={COLORS.gray} />
+            <View style={styles.emptyIcon}>
+              <Ionicons name="help-circle-outline" size={48} color={COLORS.lightBlue} />
+            </View>
             <Text style={styles.emptyText}>No FAQs found</Text>
           </View>
         ) : (
@@ -146,8 +162,8 @@ export default function FAQScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.faqHeader}>
-                <View style={styles.faqIcon}>
-                  <Ionicons name={getCategoryIcon(faq.category)} size={18} color={COLORS.primary} />
+                <View style={[styles.faqIcon, { backgroundColor: getCategoryColor(faq.category) + '15' }]}>
+                  <Ionicons name={getCategoryIcon(faq.category)} size={18} color={getCategoryColor(faq.category)} />
                 </View>
                 <Text style={styles.faqQuestion}>{faq.question}</Text>
                 <Ionicons
@@ -159,9 +175,9 @@ export default function FAQScreen() {
               {expandedId === faq.id && (
                 <View style={styles.faqAnswer}>
                   <Text style={styles.faqAnswerText}>{faq.answer}</Text>
-                  <View style={styles.faqCategory}>
-                    <Ionicons name="pricetag" size={12} color={COLORS.gray} />
-                    <Text style={styles.faqCategoryText}>{faq.category}</Text>
+                  <View style={[styles.faqCategory, { backgroundColor: getCategoryColor(faq.category) + '15' }]}>
+                    <Ionicons name="pricetag" size={12} color={getCategoryColor(faq.category)} />
+                    <Text style={[styles.faqCategoryText, { color: getCategoryColor(faq.category) }]}>{faq.category}</Text>
                   </View>
                 </View>
               )}
@@ -171,7 +187,9 @@ export default function FAQScreen() {
 
         {/* Contact Support */}
         <View style={styles.contactCard}>
-          <Ionicons name="chatbubbles" size={32} color={COLORS.primary} />
+          <View style={styles.contactIcon}>
+            <Ionicons name="chatbubbles" size={28} color={COLORS.white} />
+          </View>
           <Text style={styles.contactTitle}>Can't find what you're looking for?</Text>
           <Text style={styles.contactSubtitle}>Chat with our AI assistant for instant help</Text>
           <TouchableOpacity
@@ -179,6 +197,7 @@ export default function FAQScreen() {
             onPress={() => router.push('/support/chat')}
           >
             <Text style={styles.contactBtnText}>Start Chat</Text>
+            <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -196,53 +215,59 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 20,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    paddingTop: 8,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   placeholder: {
-    width: 40,
+    width: 44,
   },
   categoryScroll: {
     maxHeight: 60,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
   categoryContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 8,
+    gap: 10,
     flexDirection: 'row',
   },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    backgroundColor: COLORS.white,
     gap: 6,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
   },
   categoryChipActive: {
     backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   categoryText: {
     fontSize: 14,
@@ -262,16 +287,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 48,
   },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.lightBlue + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   emptyText: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 16,
     color: COLORS.gray,
   },
   faqCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   faqHeader: {
     flexDirection: 'row',
@@ -279,10 +317,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   faqIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: COLORS.primary + '15',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -291,7 +328,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
     lineHeight: 20,
   },
   faqAnswer: {
@@ -300,8 +337,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
-    marginTop: 0,
-    paddingLeft: 64,
+    marginLeft: 52,
   },
   faqAnswerText: {
     fontSize: 14,
@@ -312,43 +348,58 @@ const styles = StyleSheet.create({
   faqCategory: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     marginTop: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
     gap: 4,
   },
   faqCategoryText: {
     fontSize: 12,
-    color: COLORS.gray,
+    fontWeight: '600',
   },
   contactCard: {
-    backgroundColor: COLORS.primary + '10',
-    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
     padding: 24,
     alignItems: 'center',
     marginTop: 8,
   },
+  contactIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   contactTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
-    marginTop: 12,
+    color: COLORS.white,
     textAlign: 'center',
   },
   contactSubtitle: {
     fontSize: 14,
-    color: COLORS.gray,
+    color: COLORS.lightBlue,
     marginTop: 4,
     textAlign: 'center',
   },
   contactBtn: {
-    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 10,
-    marginTop: 16,
+    borderRadius: 12,
+    marginTop: 20,
+    gap: 8,
   },
   contactBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.white,
+    color: COLORS.primary,
   },
 });

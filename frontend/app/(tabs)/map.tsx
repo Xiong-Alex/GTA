@@ -13,14 +13,16 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
+  success: '#00A86B',
   warning: '#F59E0B',
 };
 
@@ -86,9 +88,9 @@ export default function MapScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return COLORS.secondary;
+      case 'approved': return COLORS.success;
       case 'pending': return COLORS.warning;
-      case 'in_progress': return COLORS.primary;
+      case 'in_progress': return COLORS.mediumBlue;
       default: return COLORS.gray;
     }
   };
@@ -108,6 +110,14 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Travel Map</Text>
+          <Text style={styles.subtitle}>Your destinations worldwide</Text>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
@@ -115,12 +125,6 @@ export default function MapScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Travel Map</Text>
-          <Text style={styles.subtitle}>Your destinations worldwide</Text>
-        </View>
-
         {/* Mock Map */}
         <View style={styles.mapContainer}>
           <View style={[styles.mapPlaceholder, { width: mapWidth, height: mapHeight }]}>
@@ -161,7 +165,7 @@ export default function MapScreen() {
                     ]}
                   >
                     {hasTrips && (
-                      <View style={styles.markerPulse} />
+                      <View style={[styles.markerPulse, { backgroundColor: getStatusColor(primaryTrip?.status || '') + '30' }]} />
                     )}
                   </View>
                 );
@@ -170,6 +174,7 @@ export default function MapScreen() {
 
             {/* Map Legend */}
             <View style={styles.legend}>
+              <Ionicons name="globe-outline" size={14} color={COLORS.primary} />
               <Text style={styles.legendTitle}>MOCK MAP</Text>
             </View>
           </View>
@@ -178,19 +183,25 @@ export default function MapScreen() {
         {/* Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Ionicons name="airplane" size={24} color={COLORS.primary} />
+            <View style={[styles.statIcon, { backgroundColor: COLORS.primary + '15' }]}>
+              <Ionicons name="airplane" size={22} color={COLORS.primary} />
+            </View>
             <Text style={styles.statValue}>{trips.length}</Text>
             <Text style={styles.statLabel}>Total Trips</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons name="location" size={24} color={COLORS.secondary} />
+            <View style={[styles.statIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
+              <Ionicons name="location" size={22} color={COLORS.mediumBlue} />
+            </View>
             <Text style={styles.statValue}>
               {new Set(trips.map(t => t.destination)).size}
             </Text>
             <Text style={styles.statLabel}>Destinations</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons name="checkmark-circle" size={24} color={COLORS.warning} />
+            <View style={[styles.statIcon, { backgroundColor: COLORS.warning + '15' }]}>
+              <Ionicons name="time" size={22} color={COLORS.warning} />
+            </View>
             <Text style={styles.statValue}>
               {trips.filter(t => t.status === 'pending').length}
             </Text>
@@ -203,7 +214,9 @@ export default function MapScreen() {
           <Text style={styles.sectionTitle}>Destinations</Text>
           {trips.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="globe-outline" size={48} color={COLORS.gray} />
+              <View style={styles.emptyIcon}>
+                <Ionicons name="globe-outline" size={48} color={COLORS.lightBlue} />
+              </View>
               <Text style={styles.emptyText}>No trip destinations yet</Text>
             </View>
           ) : (
@@ -240,33 +253,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 20,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.lightBlue,
+    marginTop: 4,
+  },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: 16,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.dark,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.gray,
-    marginTop: 4,
+    paddingTop: 20,
   },
   mapContainer: {
     marginBottom: 20,
   },
   mapPlaceholder: {
-    backgroundColor: '#E8F4FD',
-    borderRadius: 16,
+    backgroundColor: COLORS.darkBlue + '08',
+    borderRadius: 20,
     overflow: 'hidden',
     position: 'relative',
+    borderWidth: 1,
+    borderColor: COLORS.primary + '20',
   },
   mapGrid: {
     flex: 1,
@@ -274,48 +297,49 @@ const styles = StyleSheet.create({
   },
   continent: {
     position: 'absolute',
-    backgroundColor: '#B8D4E8',
+    backgroundColor: COLORS.primary + '15',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    opacity: 0.5,
   },
   continentLabel: {
     fontSize: 10,
-    color: COLORS.dark,
-    fontWeight: '500',
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   marker: {
     position: 'absolute',
     width: 16,
     height: 16,
     borderRadius: 8,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: COLORS.white,
     transform: [{ translateX: -8 }, { translateY: -8 }],
   },
   markerPulse: {
     position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0, 102, 204, 0.3)',
-    top: -6,
-    left: -6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    top: -9,
+    left: -9,
   },
   legend: {
     position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    bottom: 10,
+    left: 10,
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   legendTitle: {
     fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.gray,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   statsRow: {
     flexDirection: 'row',
@@ -325,20 +349,27 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  statIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   statValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.dark,
-    marginTop: 8,
+    color: COLORS.black,
   },
   statLabel: {
     fontSize: 12,
@@ -351,13 +382,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.black,
     marginBottom: 12,
   },
   emptyState: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 32,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.lightBlue + '15',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   emptyText: {
@@ -369,14 +408,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   destinationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -388,15 +432,16 @@ const styles = StyleSheet.create({
   destinationName: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   destinationTrip: {
     fontSize: 13,
     color: COLORS.gray,
+    marginTop: 2,
   },
   destinationStatus: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 12,
   },
   destinationStatusText: {

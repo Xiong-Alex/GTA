@@ -17,14 +17,15 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
   error: '#EF4444',
 };
 
@@ -122,7 +123,7 @@ export default function NewTripScreen() {
     }
   ) => (
     <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label} *</Text>
+      <Text style={styles.label}>{label} <Text style={styles.required}>*</Text></Text>
       <TextInput
         style={[
           styles.input,
@@ -152,12 +153,14 @@ export default function NewTripScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color={COLORS.dark} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Trip Request</Text>
-          <View style={styles.placeholder} />
+        <View style={styles.headerContainer}>
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
+              <Ionicons name="close" size={24} color={COLORS.white} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>New Trip Request</Text>
+            <View style={styles.placeholder} />
+          </View>
         </View>
 
         <ScrollView
@@ -167,13 +170,18 @@ export default function NewTripScreen() {
         >
           {/* Trip Details */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Trip Details</Text>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                <Ionicons name="airplane" size={18} color={COLORS.primary} />
+              </View>
+              <Text style={styles.sectionTitle}>Trip Details</Text>
+            </View>
             
             {renderInput('Trip Title', 'title', 'e.g., Q3 Sales Meeting')}
             
             {/* Destination Picker */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Destination *</Text>
+              <Text style={styles.label}>Destination <Text style={styles.required}>*</Text></Text>
               <TouchableOpacity
                 style={[
                   styles.input,
@@ -199,7 +207,9 @@ export default function NewTripScreen() {
                       style={styles.dropdownItem}
                       onPress={() => selectDestination(dest)}
                     >
-                      <Ionicons name="location" size={18} color={COLORS.primary} />
+                      <View style={styles.dropdownIcon}>
+                        <Ionicons name="location" size={16} color={COLORS.primary} />
+                      </View>
                       <Text style={styles.dropdownText}>{dest}</Text>
                     </TouchableOpacity>
                   ))}
@@ -215,11 +225,18 @@ export default function NewTripScreen() {
 
           {/* Budget */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Budget</Text>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
+                <Ionicons name="wallet" size={18} color={COLORS.mediumBlue} />
+              </View>
+              <Text style={styles.sectionTitle}>Budget</Text>
+            </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Estimated Budget (USD)</Text>
               <View style={styles.budgetInput}>
-                <Text style={styles.currencySymbol}>$</Text>
+                <View style={styles.currencyBadge}>
+                  <Text style={styles.currencySymbol}>$</Text>
+                </View>
                 <TextInput
                   style={styles.budgetField}
                   placeholder="0.00"
@@ -234,7 +251,12 @@ export default function NewTripScreen() {
 
           {/* Traveler Info */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Traveler Information</Text>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: COLORS.lightBlue + '15' }]}>
+                <Ionicons name="person" size={18} color={COLORS.lightBlue} />
+              </View>
+              <Text style={styles.sectionTitle}>Traveler Information</Text>
+            </View>
             {renderInput('Full Name', 'traveler_name', 'John Smith', { autoCapitalize: 'words' })}
             {renderInput('Email', 'traveler_email', 'john.smith@company.com', {
               keyboardType: 'email-address',
@@ -244,7 +266,12 @@ export default function NewTripScreen() {
 
           {/* Notes */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Additional Notes</Text>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: COLORS.gray + '15' }]}>
+                <Ionicons name="document-text" size={18} color={COLORS.gray} />
+              </View>
+              <Text style={styles.sectionTitle}>Additional Notes</Text>
+            </View>
             <TextInput
               style={[styles.input, styles.inputMultiline]}
               placeholder="Any special requirements or notes..."
@@ -285,46 +312,62 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 20,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    paddingTop: 8,
   },
   closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   placeholder: {
-    width: 40,
+    width: 44,
   },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: 16,
+    paddingTop: 20,
   },
   section: {
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.dark,
-    marginBottom: 16,
+    color: COLORS.black,
+    marginLeft: 12,
   },
   inputGroup: {
     marginBottom: 16,
@@ -332,15 +375,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: COLORS.dark,
+    color: COLORS.black,
     marginBottom: 8,
+  },
+  required: {
+    color: COLORS.error,
   },
   input: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     fontSize: 16,
-    color: COLORS.dark,
+    color: COLORS.black,
     borderWidth: 1,
     borderColor: COLORS.lightGray,
   },
@@ -363,7 +409,7 @@ const styles = StyleSheet.create({
   },
   pickerText: {
     fontSize: 16,
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   pickerPlaceholder: {
     fontSize: 16,
@@ -371,7 +417,7 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 14,
     marginTop: 8,
     borderWidth: 1,
     borderColor: COLORS.lightGray,
@@ -384,38 +430,50 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
   },
+  dropdownIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   dropdownText: {
     fontSize: 16,
-    color: COLORS.dark,
-    marginLeft: 10,
+    color: COLORS.black,
+    marginLeft: 12,
   },
   budgetInput: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.lightGray,
-    paddingHorizontal: 14,
+    overflow: 'hidden',
+  },
+  currencyBadge: {
+    backgroundColor: COLORS.primary + '15',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   currencySymbol: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.gray,
-    marginRight: 8,
+    color: COLORS.primary,
   },
   budgetField: {
     flex: 1,
     fontSize: 16,
-    color: COLORS.dark,
-    paddingVertical: 14,
+    color: COLORS.black,
+    padding: 14,
   },
   submitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginTop: 8,
     marginBottom: 32,

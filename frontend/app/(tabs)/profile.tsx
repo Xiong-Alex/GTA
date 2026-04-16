@@ -11,14 +11,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
+  success: '#00A86B',
 };
 
 export default function ProfileScreen() {
@@ -55,8 +57,8 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Header */}
+      {/* Header */}
+      <View style={styles.headerContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
         </View>
@@ -64,7 +66,7 @@ export default function ProfileScreen() {
         {/* User Card */}
         <View style={styles.userCard}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={40} color={COLORS.white} />
+            <Ionicons name="person" size={36} color={COLORS.white} />
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>Business Traveler</Text>
@@ -74,7 +76,9 @@ export default function ProfileScreen() {
             <Text style={styles.companyText}>CORPORATE</Text>
           </View>
         </View>
+      </View>
 
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Quick Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
@@ -135,6 +139,9 @@ export default function ProfileScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
+          <View style={styles.footerLogo}>
+            <Ionicons name="airplane" size={24} color={COLORS.primary} />
+          </View>
           <Text style={styles.footerText}>Global Travel App</Text>
           <Text style={styles.footerSubtext}>B2B Corporate Travel Management</Text>
         </View>
@@ -148,65 +155,69 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 24,
   },
   header: {
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginTop: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.primary,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: COLORS.mediumBlue,
     justifyContent: 'center',
     alignItems: 'center',
   },
   userInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: 14,
   },
   userName: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   userEmail: {
     fontSize: 14,
-    color: COLORS.gray,
+    color: COLORS.lightBlue,
     marginTop: 2,
   },
   companyBadge: {
-    backgroundColor: COLORS.secondary + '20',
+    backgroundColor: COLORS.success,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
   companyText: {
     fontSize: 10,
     fontWeight: '700',
-    color: COLORS.secondary,
+    color: COLORS.white,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+    paddingTop: 20,
   },
   statsRow: {
     flexDirection: 'row',
@@ -214,6 +225,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   statItem: {
     flex: 1,
@@ -224,9 +240,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGray,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.primary,
   },
   statLabel: {
     fontSize: 13,
@@ -239,20 +255,20 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.black,
     marginBottom: 12,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   menuIcon: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: COLORS.primary + '15',
     justifyContent: 'center',
@@ -265,15 +281,16 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   menuSubtitle: {
     fontSize: 12,
     color: COLORS.gray,
+    marginTop: 2,
   },
   infoCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
   },
   infoRow: {
@@ -292,20 +309,29 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   footer: {
     alignItems: 'center',
     paddingVertical: 20,
   },
+  footerLogo: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   footerText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.gray,
+    color: COLORS.primary,
   },
   footerSubtext: {
     fontSize: 12,
-    color: COLORS.lightGray,
+    color: COLORS.gray,
     marginTop: 4,
   },
 });

@@ -16,14 +16,15 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
 };
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
@@ -53,7 +54,6 @@ export default function ChatScreen() {
   const [sessionId] = useState(() => `session-${Date.now()}`);
 
   useEffect(() => {
-    // Add welcome message
     setMessages([{
       id: 'welcome',
       role: 'assistant',
@@ -140,20 +140,22 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <View style={styles.headerIcon}>
-              <Ionicons name="sparkles" size={20} color={COLORS.white} />
+        <View style={styles.headerContainer}>
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+            </TouchableOpacity>
+            <View style={styles.headerContent}>
+              <View style={styles.headerIcon}>
+                <Ionicons name="sparkles" size={20} color={COLORS.primary} />
+              </View>
+              <View>
+                <Text style={styles.headerTitle}>AI Travel Assistant</Text>
+                <Text style={styles.headerSubtitle}>Powered by GPT-5.2</Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.headerTitle}>AI Travel Assistant</Text>
-              <Text style={styles.headerSubtitle}>Powered by GPT-5.2</Text>
-            </View>
+            <View style={styles.placeholder} />
           </View>
-          <View style={styles.placeholder} />
         </View>
 
         {/* Messages */}
@@ -227,6 +229,9 @@ export default function ChatScreen() {
                   style={styles.suggestionChip}
                   onPress={() => sendMessage(suggestion)}
                 >
+                  <View style={styles.suggestionIcon}>
+                    <Ionicons name="chatbubble-outline" size={16} color={COLORS.primary} />
+                  </View>
                   <Text style={styles.suggestionText}>{suggestion}</Text>
                   <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
                 </TouchableOpacity>
@@ -237,16 +242,18 @@ export default function ChatScreen() {
 
         {/* Input */}
         <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type your message..."
-            placeholderTextColor={COLORS.gray}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={1000}
-            onSubmitEditing={() => sendMessage(inputText)}
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Type your message..."
+              placeholderTextColor={COLORS.gray}
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={1000}
+              onSubmitEditing={() => sendMessage(inputText)}
+            />
+          </View>
           <TouchableOpacity
             style={[
               styles.sendBtn,
@@ -275,21 +282,24 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 16,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    paddingTop: 8,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -298,25 +308,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: COLORS.gray,
+    color: COLORS.lightBlue,
   },
   placeholder: {
-    width: 40,
+    width: 44,
   },
   messagesContainer: {
     flex: 1,
@@ -333,9 +343,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   avatarAssistant: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -343,8 +353,8 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '75%',
-    padding: 12,
-    borderRadius: 16,
+    padding: 14,
+    borderRadius: 18,
   },
   messageBubbleUser: {
     backgroundColor: COLORS.primary,
@@ -353,10 +363,15 @@ const styles = StyleSheet.create({
   messageBubbleAssistant: {
     backgroundColor: COLORS.white,
     borderBottomLeftRadius: 4,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   messageText: {
     fontSize: 15,
-    color: COLORS.dark,
+    color: COLORS.black,
     lineHeight: 22,
   },
   messageTextUser: {
@@ -380,9 +395,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.gray,
-    marginHorizontal: 2,
-    opacity: 0.5,
+    backgroundColor: COLORS.primary,
+    marginHorizontal: 3,
   },
   typingDot1: {
     opacity: 0.4,
@@ -405,16 +419,29 @@ const styles = StyleSheet.create({
   suggestionChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: COLORS.white,
-    paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 12,
-    marginBottom: 8,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    marginBottom: 10,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  suggestionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   suggestionText: {
     fontSize: 14,
-    color: COLORS.dark,
+    color: COLORS.black,
     flex: 1,
   },
   inputContainer: {
@@ -425,21 +452,23 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
   },
-  input: {
+  inputWrapper: {
     flex: 1,
     backgroundColor: COLORS.background,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderRadius: 24,
+    marginRight: 10,
+  },
+  input: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
     fontSize: 16,
-    color: COLORS.dark,
+    color: COLORS.black,
     maxHeight: 100,
-    marginRight: 8,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',

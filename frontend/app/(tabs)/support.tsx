@@ -11,14 +11,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
+  success: '#00A86B',
+  error: '#EF4444',
 };
 
 export default function SupportScreen() {
@@ -38,7 +41,7 @@ export default function SupportScreen() {
       icon: 'help-circle',
       title: 'FAQ',
       subtitle: 'Browse frequently asked questions',
-      color: COLORS.secondary,
+      color: COLORS.mediumBlue,
       route: '/support/faq',
     },
     {
@@ -46,7 +49,7 @@ export default function SupportScreen() {
       icon: 'document-text',
       title: 'Submit Feedback',
       subtitle: 'Share complaints, suggestions, or praise',
-      color: COLORS.accent,
+      color: COLORS.lightBlue,
       route: '/profile/feedback',
     },
   ];
@@ -57,7 +60,7 @@ export default function SupportScreen() {
       icon: 'warning',
       title: 'Emergency Hotline',
       value: '1-800-TRAVEL-HELP',
-      color: '#EF4444',
+      color: COLORS.error,
     },
     {
       id: 'email',
@@ -71,19 +74,21 @@ export default function SupportScreen() {
       icon: 'time',
       title: 'Support Hours',
       value: '24/7 Available',
-      color: COLORS.secondary,
+      color: COLORS.success,
     },
   ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Header */}
+      {/* Header */}
+      <View style={styles.headerContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Support</Text>
           <Text style={styles.subtitle}>How can we help you today?</Text>
         </View>
+      </View>
 
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Support Options */}
         <View style={styles.section}>
           {supportOptions.map((option) => (
@@ -123,7 +128,7 @@ export default function SupportScreen() {
         {/* AI Assistant Promo */}
         <View style={styles.promoCard}>
           <View style={styles.promoIcon}>
-            <Ionicons name="sparkles" size={32} color={COLORS.primary} />
+            <Ionicons name="sparkles" size={32} color={COLORS.white} />
           </View>
           <Text style={styles.promoTitle}>AI-Powered Support</Text>
           <Text style={styles.promoText}>
@@ -135,7 +140,7 @@ export default function SupportScreen() {
             onPress={() => router.push('/support/chat')}
           >
             <Text style={styles.promoBtnText}>Start Conversation</Text>
-            <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+            <Ionicons name="arrow-forward" size={18} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -148,24 +153,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 20,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.lightBlue,
+    marginTop: 4,
+  },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: 16,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.dark,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.gray,
-    marginTop: 4,
+    paddingTop: 20,
   },
   section: {
     marginBottom: 24,
@@ -173,7 +186,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.black,
     marginBottom: 12,
   },
   optionCard: {
@@ -183,11 +196,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   optionIcon: {
     width: 56,
@@ -203,7 +216,7 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   optionSubtitle: {
     fontSize: 13,
@@ -214,13 +227,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
   },
   contactIcon: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -235,10 +248,10 @@ const styles = StyleSheet.create({
   contactValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   promoCard: {
-    backgroundColor: COLORS.primary + '10',
+    backgroundColor: COLORS.primary,
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
@@ -246,8 +259,8 @@ const styles = StyleSheet.create({
   promoIcon: {
     width: 64,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -255,12 +268,12 @@ const styles = StyleSheet.create({
   promoTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.white,
     marginBottom: 8,
   },
   promoText: {
     fontSize: 14,
-    color: COLORS.gray,
+    color: COLORS.lightBlue,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
@@ -268,15 +281,15 @@ const styles = StyleSheet.create({
   promoBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
     paddingHorizontal: 24,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     gap: 8,
   },
   promoBtnText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.white,
+    color: COLORS.primary,
   },
 });

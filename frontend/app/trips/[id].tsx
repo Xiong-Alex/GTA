@@ -13,14 +13,16 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
+  success: '#00A86B',
   warning: '#F59E0B',
   error: '#EF4444',
 };
@@ -90,9 +92,9 @@ export default function TripDetailScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return COLORS.secondary;
+      case 'approved': return COLORS.success;
       case 'pending': return COLORS.warning;
-      case 'in_progress': return COLORS.primary;
+      case 'in_progress': return COLORS.mediumBlue;
       case 'completed': return COLORS.gray;
       default: return COLORS.gray;
     }
@@ -131,11 +133,13 @@ export default function TripDetailScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
           </TouchableOpacity>
         </View>
         <View style={styles.loadingContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color={COLORS.gray} />
+          <View style={styles.errorIcon}>
+            <Ionicons name="alert-circle-outline" size={48} color={COLORS.lightBlue} />
+          </View>
           <Text style={styles.errorText}>Trip not found</Text>
         </View>
       </SafeAreaView>
@@ -145,34 +149,37 @@ export default function TripDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Trip Details</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Trip Details</Text>
+          <View style={styles.placeholder} />
+        </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Status & Title */}
         <View style={styles.titleSection}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) + '20' }]}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(trip.status) }]} />
-            <Text style={[styles.statusText, { color: getStatusColor(trip.status) }]}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) }]}>
+            <Text style={styles.statusText}>
               {trip.status.charAt(0).toUpperCase() + trip.status.slice(1).replace('_', ' ')}
             </Text>
           </View>
           <Text style={styles.tripTitle}>{trip.title}</Text>
           <View style={styles.tripMeta}>
-            <Ionicons name="location" size={18} color={COLORS.primary} />
+            <Ionicons name="location" size={18} color={COLORS.lightBlue} />
             <Text style={styles.destination}>{trip.destination}</Text>
           </View>
         </View>
+      </View>
 
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Dates */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="calendar" size={20} color={COLORS.primary} />
+            <View style={[styles.cardIcon, { backgroundColor: COLORS.primary + '15' }]}>
+              <Ionicons name="calendar" size={20} color={COLORS.primary} />
+            </View>
             <Text style={styles.cardTitle}>Travel Dates</Text>
           </View>
           <View style={styles.dateRow}>
@@ -180,8 +187,10 @@ export default function TripDetailScreen() {
               <Text style={styles.dateLabel}>Departure</Text>
               <Text style={styles.dateValue}>{formatDate(trip.start_date)}</Text>
             </View>
-            <Ionicons name="arrow-forward" size={20} color={COLORS.lightGray} />
-            <View style={styles.dateItem}>
+            <View style={styles.dateArrow}>
+              <Ionicons name="arrow-forward" size={20} color={COLORS.lightGray} />
+            </View>
+            <View style={[styles.dateItem, { alignItems: 'flex-end' }]}>
               <Text style={styles.dateLabel}>Return</Text>
               <Text style={styles.dateValue}>{formatDate(trip.end_date)}</Text>
             </View>
@@ -191,7 +200,9 @@ export default function TripDetailScreen() {
         {/* Budget */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="wallet" size={20} color={COLORS.secondary} />
+            <View style={[styles.cardIcon, { backgroundColor: COLORS.success + '15' }]}>
+              <Ionicons name="wallet" size={20} color={COLORS.success} />
+            </View>
             <Text style={styles.cardTitle}>Budget & Expenses</Text>
           </View>
           <View style={styles.budgetRow}>
@@ -207,7 +218,9 @@ export default function TripDetailScreen() {
             </View>
             <View style={styles.budgetItem}>
               <Text style={styles.budgetLabel}>Remaining</Text>
-              <Text style={styles.budgetValue}>${(trip.budget - trip.expenses).toLocaleString()}</Text>
+              <Text style={[styles.budgetValue, { color: COLORS.success }]}>
+                ${(trip.budget - trip.expenses).toLocaleString()}
+              </Text>
             </View>
           </View>
           <View style={styles.progressBar}>
@@ -216,7 +229,7 @@ export default function TripDetailScreen() {
                 styles.progressFill,
                 {
                   width: `${Math.min((trip.expenses / trip.budget) * 100, 100)}%`,
-                  backgroundColor: trip.expenses > trip.budget ? COLORS.error : COLORS.secondary,
+                  backgroundColor: trip.expenses > trip.budget ? COLORS.error : COLORS.success,
                 },
               ]}
             />
@@ -227,14 +240,18 @@ export default function TripDetailScreen() {
         {trip.flights.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="airplane" size={20} color={COLORS.accent} />
+              <View style={[styles.cardIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
+                <Ionicons name="airplane" size={20} color={COLORS.mediumBlue} />
+              </View>
               <Text style={styles.cardTitle}>Flights</Text>
             </View>
             {trip.flights.map((flight, index) => (
-              <View key={index} style={styles.flightItem}>
+              <View key={index} style={[styles.flightItem, index > 0 && styles.flightItemBorder]}>
                 <View style={styles.flightHeader}>
                   <Text style={styles.flightAirline}>{flight.airline}</Text>
-                  <Text style={styles.flightNumber}>{flight.flight}</Text>
+                  <View style={styles.flightNumberBadge}>
+                    <Text style={styles.flightNumber}>{flight.flight}</Text>
+                  </View>
                 </View>
                 <View style={styles.flightRoute}>
                   <View style={styles.flightPoint}>
@@ -243,10 +260,12 @@ export default function TripDetailScreen() {
                   </View>
                   <View style={styles.flightLine}>
                     <View style={styles.line} />
-                    <Ionicons name="airplane" size={16} color={COLORS.primary} />
+                    <View style={styles.planeIcon}>
+                      <Ionicons name="airplane" size={16} color={COLORS.primary} />
+                    </View>
                     <View style={styles.line} />
                   </View>
-                  <View style={styles.flightPoint}>
+                  <View style={[styles.flightPoint, { alignItems: 'flex-end' }]}>
                     <Text style={styles.airportCode}>{flight.to}</Text>
                     <Text style={styles.flightTime}>{formatTime(flight.arrival)}</Text>
                   </View>
@@ -260,16 +279,27 @@ export default function TripDetailScreen() {
         {trip.hotels.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="bed" size={20} color={COLORS.primary} />
+              <View style={[styles.cardIcon, { backgroundColor: COLORS.lightBlue + '15' }]}>
+                <Ionicons name="bed" size={20} color={COLORS.lightBlue} />
+              </View>
               <Text style={styles.cardTitle}>Accommodation</Text>
             </View>
             {trip.hotels.map((hotel, index) => (
               <View key={index} style={styles.hotelItem}>
                 <Text style={styles.hotelName}>{hotel.name}</Text>
-                <Text style={styles.hotelAddress}>{hotel.address}</Text>
+                <View style={styles.hotelMeta}>
+                  <Ionicons name="location-outline" size={14} color={COLORS.gray} />
+                  <Text style={styles.hotelAddress}>{hotel.address}</Text>
+                </View>
                 <View style={styles.hotelDates}>
-                  <Text style={styles.hotelDate}>Check-in: {formatDate(hotel.checkin)}</Text>
-                  <Text style={styles.hotelDate}>Check-out: {formatDate(hotel.checkout)}</Text>
+                  <View style={styles.hotelDateItem}>
+                    <Text style={styles.hotelDateLabel}>Check-in</Text>
+                    <Text style={styles.hotelDateValue}>{formatDate(hotel.checkin)}</Text>
+                  </View>
+                  <View style={styles.hotelDateItem}>
+                    <Text style={styles.hotelDateLabel}>Check-out</Text>
+                    <Text style={styles.hotelDateValue}>{formatDate(hotel.checkout)}</Text>
+                  </View>
                 </View>
               </View>
             ))}
@@ -280,11 +310,13 @@ export default function TripDetailScreen() {
         {trip.meetings.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="people" size={20} color={COLORS.secondary} />
+              <View style={[styles.cardIcon, { backgroundColor: COLORS.darkBlue + '15' }]}>
+                <Ionicons name="people" size={20} color={COLORS.darkBlue} />
+              </View>
               <Text style={styles.cardTitle}>Meetings</Text>
             </View>
             {trip.meetings.map((meeting, index) => (
-              <View key={index} style={styles.meetingItem}>
+              <View key={index} style={[styles.meetingItem, index > 0 && styles.meetingItemBorder]}>
                 <Text style={styles.meetingTitle}>{meeting.title}</Text>
                 <View style={styles.meetingMeta}>
                   <Ionicons name="calendar-outline" size={14} color={COLORS.gray} />
@@ -302,18 +334,29 @@ export default function TripDetailScreen() {
         {/* Traveler Info */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="person" size={20} color={COLORS.gray} />
+            <View style={[styles.cardIcon, { backgroundColor: COLORS.gray + '15' }]}>
+              <Ionicons name="person" size={20} color={COLORS.gray} />
+            </View>
             <Text style={styles.cardTitle}>Traveler</Text>
           </View>
-          <Text style={styles.travelerName}>{trip.traveler_name}</Text>
-          <Text style={styles.travelerEmail}>{trip.traveler_email}</Text>
+          <View style={styles.travelerInfo}>
+            <View style={styles.travelerAvatar}>
+              <Ionicons name="person" size={24} color={COLORS.white} />
+            </View>
+            <View style={styles.travelerDetails}>
+              <Text style={styles.travelerName}>{trip.traveler_name}</Text>
+              <Text style={styles.travelerEmail}>{trip.traveler_email}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Purpose */}
         {trip.purpose && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="document-text" size={20} color={COLORS.gray} />
+              <View style={[styles.cardIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                <Ionicons name="document-text" size={20} color={COLORS.primary} />
+              </View>
               <Text style={styles.cardTitle}>Purpose</Text>
             </View>
             <Text style={styles.purposeText}>{trip.purpose}</Text>
@@ -334,66 +377,68 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  errorIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.lightBlue + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   errorText: {
-    marginTop: 16,
     fontSize: 16,
     color: COLORS.gray,
+  },
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 24,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.white,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   placeholder: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
+    width: 44,
   },
   titleSection: {
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    marginTop: 16,
   },
   statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
     marginBottom: 12,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
   statusText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: COLORS.white,
   },
   tripTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.white,
     marginBottom: 8,
   },
   tripMeta: {
@@ -402,26 +447,45 @@ const styles = StyleSheet.create({
   },
   destination: {
     fontSize: 16,
-    color: COLORS.primary,
+    color: COLORS.lightBlue,
     fontWeight: '500',
     marginLeft: 6,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+    paddingTop: 20,
   },
   card: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
-    marginLeft: 8,
+    color: COLORS.black,
+    marginLeft: 12,
   },
   dateRow: {
     flexDirection: 'row',
@@ -431,31 +495,34 @@ const styles = StyleSheet.create({
   dateItem: {
     flex: 1,
   },
+  dateArrow: {
+    paddingHorizontal: 16,
+  },
   dateLabel: {
     fontSize: 12,
     color: COLORS.gray,
+    marginBottom: 4,
   },
   dateValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: COLORS.dark,
-    marginTop: 4,
+    color: COLORS.black,
   },
   budgetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   budgetItem: {},
   budgetLabel: {
     fontSize: 12,
     color: COLORS.gray,
+    marginBottom: 4,
   },
   budgetValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.dark,
-    marginTop: 2,
+    color: COLORS.black,
   },
   overBudget: {
     color: COLORS.error,
@@ -471,22 +538,32 @@ const styles = StyleSheet.create({
   },
   flightItem: {
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+  },
+  flightItemBorder: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
   },
   flightHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 16,
   },
   flightAirline: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
+  },
+  flightNumberBadge: {
+    backgroundColor: COLORS.primary + '15',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   flightNumber: {
-    fontSize: 14,
-    color: COLORS.gray,
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   flightRoute: {
     flexDirection: 'row',
@@ -494,12 +571,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   flightPoint: {
-    alignItems: 'center',
+    width: 70,
   },
   airportCode: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   flightTime: {
     fontSize: 13,
@@ -511,45 +588,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   line: {
     flex: 1,
-    height: 1,
+    height: 2,
     backgroundColor: COLORS.lightGray,
   },
+  planeIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
   hotelItem: {
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   hotelName: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
+    marginBottom: 6,
+  },
+  hotelMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   hotelAddress: {
     fontSize: 14,
     color: COLORS.gray,
-    marginTop: 4,
+    marginLeft: 6,
+    flex: 1,
   },
   hotelDates: {
     flexDirection: 'row',
-    marginTop: 8,
-    gap: 16,
+    gap: 24,
   },
-  hotelDate: {
-    fontSize: 13,
+  hotelDateItem: {},
+  hotelDateLabel: {
+    fontSize: 12,
     color: COLORS.gray,
+    marginBottom: 2,
+  },
+  hotelDateValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.black,
   },
   meetingItem: {
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+  },
+  meetingItemBorder: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
   },
   meetingTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.dark,
-    marginBottom: 6,
+    color: COLORS.black,
+    marginBottom: 8,
   },
   meetingMeta: {
     flexDirection: 'row',
@@ -561,19 +662,34 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     marginLeft: 6,
   },
+  travelerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  travelerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  travelerDetails: {
+    marginLeft: 12,
+  },
   travelerName: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   travelerEmail: {
     fontSize: 14,
     color: COLORS.gray,
-    marginTop: 4,
+    marginTop: 2,
   },
   purposeText: {
     fontSize: 14,
     color: COLORS.gray,
-    lineHeight: 20,
+    lineHeight: 22,
   },
 });

@@ -4,13 +4,18 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
+  success: '#00A86B',
+  warning: '#F59E0B',
+  error: '#EF4444',
 };
 
 export default function TabLayout() {
@@ -76,11 +81,15 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopWidth: 0,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 24 : 8,
     height: Platform.OS === 'ios' ? 88 : 64,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   tabLabel: {
     fontSize: 11,

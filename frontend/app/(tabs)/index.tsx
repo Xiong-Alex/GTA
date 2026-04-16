@@ -14,14 +14,16 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
+  success: '#00A86B',
   warning: '#F59E0B',
   error: '#EF4444',
 };
@@ -59,14 +61,12 @@ export default function HomeScreen() {
     try {
       setError(null);
       
-      // Fetch trips
       const tripsRes = await fetch(`${API_URL}/api/trips`);
       if (tripsRes.ok) {
         const trips = await tripsRes.json();
         setUpcomingTrips(trips.slice(0, 3));
       }
       
-      // Fetch unread notifications count
       const notifRes = await fetch(`${API_URL}/api/notifications/unread-count`);
       if (notifRes.ok) {
         const data = await notifRes.json();
@@ -102,9 +102,9 @@ export default function HomeScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return COLORS.secondary;
+      case 'approved': return COLORS.success;
       case 'pending': return COLORS.warning;
-      case 'in_progress': return COLORS.primary;
+      case 'in_progress': return COLORS.mediumBlue;
       case 'completed': return COLORS.gray;
       default: return COLORS.gray;
     }
@@ -128,14 +128,8 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
-        }
-      >
-        {/* Header */}
+      {/* Header */}
+      <View style={styles.headerGradient}>
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Welcome back</Text>
@@ -145,7 +139,7 @@ export default function HomeScreen() {
             style={styles.notificationBtn}
             onPress={() => router.push('/notifications')}
           >
-            <Ionicons name="notifications-outline" size={24} color={COLORS.dark} />
+            <Ionicons name="notifications-outline" size={24} color={COLORS.white} />
             {unreadCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -153,7 +147,15 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
         </View>
+      </View>
 
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+        }
+      >
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -172,8 +174,8 @@ export default function HomeScreen() {
               style={styles.actionCard}
               onPress={() => router.push('/support/chat')}
             >
-              <View style={[styles.actionIcon, { backgroundColor: COLORS.secondary + '15' }]}>
-                <Ionicons name="chatbubble-ellipses" size={28} color={COLORS.secondary} />
+              <View style={[styles.actionIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
+                <Ionicons name="chatbubble-ellipses" size={28} color={COLORS.mediumBlue} />
               </View>
               <Text style={styles.actionText}>AI Support</Text>
             </TouchableOpacity>
@@ -182,8 +184,8 @@ export default function HomeScreen() {
               style={styles.actionCard}
               onPress={() => router.push('/support/faq')}
             >
-              <View style={[styles.actionIcon, { backgroundColor: COLORS.accent + '15' }]}>
-                <Ionicons name="help-circle" size={28} color={COLORS.accent} />
+              <View style={[styles.actionIcon, { backgroundColor: COLORS.lightBlue + '15' }]}>
+                <Ionicons name="help-circle" size={28} color={COLORS.lightBlue} />
               </View>
               <Text style={styles.actionText}>FAQ</Text>
             </TouchableOpacity>
@@ -192,8 +194,8 @@ export default function HomeScreen() {
               style={styles.actionCard}
               onPress={() => router.push('/profile/feedback')}
             >
-              <View style={[styles.actionIcon, { backgroundColor: '#8B5CF6' + '15' }]}>
-                <Ionicons name="document-text" size={28} color="#8B5CF6" />
+              <View style={[styles.actionIcon, { backgroundColor: COLORS.darkBlue + '15' }]}>
+                <Ionicons name="document-text" size={28} color={COLORS.darkBlue} />
               </View>
               <Text style={styles.actionText}>Feedback</Text>
             </TouchableOpacity>
@@ -211,7 +213,9 @@ export default function HomeScreen() {
 
           {upcomingTrips.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="airplane-outline" size={48} color={COLORS.gray} />
+              <View style={styles.emptyIcon}>
+                <Ionicons name="airplane-outline" size={48} color={COLORS.lightBlue} />
+              </View>
               <Text style={styles.emptyText}>No upcoming trips</Text>
               <TouchableOpacity style={styles.seedBtn} onPress={seedData}>
                 <Text style={styles.seedBtnText}>Load Demo Data</Text>
@@ -224,17 +228,19 @@ export default function HomeScreen() {
                 style={styles.tripCard}
                 onPress={() => router.push(`/trips/${trip.id}`)}
               >
-                <View style={styles.tripInfo}>
-                  <Text style={styles.tripTitle}>{trip.title}</Text>
-                  <View style={styles.tripMeta}>
-                    <Ionicons name="location-outline" size={14} color={COLORS.gray} />
-                    <Text style={styles.tripDestination}>{trip.destination}</Text>
-                  </View>
-                  <View style={styles.tripMeta}>
-                    <Ionicons name="calendar-outline" size={14} color={COLORS.gray} />
-                    <Text style={styles.tripDate}>
-                      {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
-                    </Text>
+                <View style={styles.tripCardLeft}>
+                  <View style={styles.tripInfo}>
+                    <Text style={styles.tripTitle}>{trip.title}</Text>
+                    <View style={styles.tripMeta}>
+                      <Ionicons name="location-outline" size={14} color={COLORS.gray} />
+                      <Text style={styles.tripDestination}>{trip.destination}</Text>
+                    </View>
+                    <View style={styles.tripMeta}>
+                      <Ionicons name="calendar-outline" size={14} color={COLORS.gray} />
+                      <Text style={styles.tripDate}>
+                        {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
+                      </Text>
+                    </View>
                   </View>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) + '20' }]}>
@@ -250,7 +256,9 @@ export default function HomeScreen() {
         {/* Help Section */}
         <View style={styles.helpSection}>
           <View style={styles.helpContent}>
-            <Ionicons name="headset" size={32} color={COLORS.primary} />
+            <View style={styles.helpIconContainer}>
+              <Ionicons name="headset" size={28} color={COLORS.white} />
+            </View>
             <View style={styles.helpText}>
               <Text style={styles.helpTitle}>Need Help?</Text>
               <Text style={styles.helpSubtitle}>Chat with our AI assistant 24/7</Text>
@@ -261,6 +269,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/support/chat')}
           >
             <Text style={styles.helpBtnText}>Start Chat</Text>
+            <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -278,6 +287,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingTop: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -289,44 +299,49 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     fontSize: 16,
   },
+  headerGradient: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 20,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   greeting: {
     fontSize: 14,
-    color: COLORS.gray,
+    color: COLORS.lightBlue,
+    fontWeight: '500',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   notificationBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.white,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   badge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     backgroundColor: COLORS.error,
     borderRadius: 10,
-    minWidth: 18,
-    height: 18,
+    minWidth: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
   },
   badgeText: {
     color: COLORS.white,
@@ -348,11 +363,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   actionIcon: {
     width: 56,
@@ -365,7 +380,7 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   section: {
     marginBottom: 24,
@@ -379,7 +394,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   seeAll: {
     fontSize: 14,
@@ -392,17 +407,25 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: 'center',
   },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.lightBlue + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   emptyText: {
-    marginTop: 12,
     fontSize: 16,
     color: COLORS.gray,
+    marginBottom: 16,
   },
   seedBtn: {
-    marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   seedBtnText: {
     color: COLORS.white,
@@ -416,11 +439,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  tripCardLeft: {
+    flex: 1,
   },
   tripInfo: {
     flex: 1,
@@ -428,8 +456,8 @@ const styles = StyleSheet.create({
   tripTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
-    marginBottom: 4,
+    color: COLORS.black,
+    marginBottom: 6,
   },
   tripMeta: {
     flexDirection: 'row',
@@ -456,9 +484,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   helpSection: {
-    backgroundColor: COLORS.primary + '10',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -468,26 +496,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  helpIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   helpText: {
     marginLeft: 12,
   },
   helpTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   helpSubtitle: {
     fontSize: 13,
-    color: COLORS.gray,
+    color: COLORS.lightBlue,
   },
   helpBtn: {
-    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
+    gap: 6,
   },
   helpBtnText: {
-    color: COLORS.white,
+    color: COLORS.primary,
     fontWeight: '600',
     fontSize: 14,
   },

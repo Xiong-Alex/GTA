@@ -14,14 +14,16 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 
 const COLORS = {
-  primary: '#0066CC',
-  secondary: '#00A86B',
-  accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
-  lightGray: '#E5E7EB',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
+  black: '#000000',
+  gray: '#666666',
   white: '#FFFFFF',
+  background: '#F0F4F8',
+  lightGray: '#E5E7EB',
+  success: '#00A86B',
   warning: '#F59E0B',
   error: '#EF4444',
 };
@@ -79,9 +81,9 @@ export default function TripsScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return COLORS.secondary;
+      case 'approved': return COLORS.success;
       case 'pending': return COLORS.warning;
-      case 'in_progress': return COLORS.primary;
+      case 'in_progress': return COLORS.mediumBlue;
       case 'completed': return COLORS.gray;
       default: return COLORS.gray;
     }
@@ -113,14 +115,16 @@ export default function TripsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>My Trips</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => router.push('/trips/new')}
-        >
-          <Ionicons name="add" size={24} color={COLORS.white} />
-        </TouchableOpacity>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <Text style={styles.title}>My Trips</Text>
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => router.push('/trips/new')}
+          >
+            <Ionicons name="add" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Filters */}
@@ -161,7 +165,9 @@ export default function TripsScreen() {
       >
         {filteredTrips.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="airplane-outline" size={64} color={COLORS.gray} />
+            <View style={styles.emptyIcon}>
+              <Ionicons name="airplane-outline" size={64} color={COLORS.lightBlue} />
+            </View>
             <Text style={styles.emptyTitle}>No trips found</Text>
             <Text style={styles.emptySubtitle}>
               {filter === 'all' ? 'Create your first trip request' : `No ${filter.replace('_', ' ')} trips`}
@@ -217,7 +223,7 @@ export default function TripsScreen() {
                         styles.progressFill,
                         {
                           width: `${Math.min((trip.expenses / trip.budget) * 100, 100)}%`,
-                          backgroundColor: trip.expenses > trip.budget ? COLORS.error : COLORS.secondary,
+                          backgroundColor: trip.expenses > trip.budget ? COLORS.error : COLORS.success,
                         },
                       ]}
                     />
@@ -242,39 +248,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingBottom: 20,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: COLORS.white,
   },
   addBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   filterScroll: {
-    maxHeight: 50,
+    maxHeight: 60,
+    backgroundColor: COLORS.background,
   },
   filterContent: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingVertical: 12,
     gap: 8,
     flexDirection: 'row',
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 25,
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.lightGray,
@@ -301,10 +314,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 64,
   },
+  emptyIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.lightBlue + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
     marginTop: 16,
   },
   emptySubtitle: {
@@ -317,11 +339,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   tripHeader: {
     flexDirection: 'row',
@@ -349,7 +371,7 @@ const styles = StyleSheet.create({
   tripTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
     marginBottom: 12,
   },
   tripDetails: {
@@ -382,7 +404,7 @@ const styles = StyleSheet.create({
   budgetValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.dark,
+    color: COLORS.black,
   },
   overBudget: {
     color: COLORS.error,
