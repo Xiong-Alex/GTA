@@ -4,6 +4,11 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+const PHONE_VIEWPORT = {
+  width: 430,
+  height: 932,
+};
+
 function WebPhoneFrame({ children }: React.PropsWithChildren) {
   const { width, height } = useWindowDimensions();
   const shouldFrame = Platform.OS === 'web' && width >= 768;
@@ -15,14 +20,32 @@ function WebPhoneFrame({ children }: React.PropsWithChildren) {
   const availableHeight = Math.max(height - 40, 560);
   const availableWidth = Math.max(width - 48, 320);
   const frameHeight = Math.min(availableHeight, 880);
-  const frameWidth = Math.min(Math.round(frameHeight * (430 / 932)), availableWidth - 24);
+  const frameWidth = Math.min(
+    Math.round(frameHeight * (PHONE_VIEWPORT.width / PHONE_VIEWPORT.height)),
+    availableWidth - 24
+  );
+  const scale = Math.min(
+    frameWidth / PHONE_VIEWPORT.width,
+    frameHeight / PHONE_VIEWPORT.height
+  );
 
   return (
     <View style={styles.desktopCanvas}>
       <View style={[styles.phoneShadow, { width: frameWidth + 24, height: frameHeight + 24 }]}>
         <View style={[styles.phoneShell, { width: frameWidth, height: frameHeight }]}>
           <View pointerEvents="none" style={styles.phoneMask} />
-          <View style={styles.appSurface}>{children}</View>
+          <View
+            style={[
+              styles.appViewport,
+              {
+                width: PHONE_VIEWPORT.width,
+                height: PHONE_VIEWPORT.height,
+                transform: [{ scale }],
+              },
+            ]}
+          >
+            <View style={styles.appSurface}>{children}</View>
+          </View>
         </View>
       </View>
     </View>
@@ -83,6 +106,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: 40,
     backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   phoneMask: {
     ...StyleSheet.absoluteFillObject,
@@ -95,8 +120,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 0,
     backgroundColor: '#F0F4F8',
   },
+  appViewport: {
+    transformOrigin: 'top center',
+  },
   appSurface: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     overflow: 'hidden',
     borderRadius: 40,
     borderTopLeftRadius: 0,
