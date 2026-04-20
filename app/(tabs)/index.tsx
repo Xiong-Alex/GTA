@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getTrips, getUnreadNotificationCount, resetDemoData } from '../../lib/local-data';
+import { TabScreenBackground } from '../../components/tab-screen-background';
 
 const COLORS = {
   primary: '#0033A0',
@@ -110,10 +111,10 @@ export default function HomeScreen() {
   const pendingCases = upcomingTrips.filter((trip) => trip.status === 'pending').length;
   const trackedBudget = upcomingTrips.reduce((sum, trip) => sum + trip.budget, 0);
   const quickActions = [
-    { label: 'Open Case', icon: 'add-circle', color: COLORS.primary, route: '/trips/new' },
-    { label: 'Support', icon: 'chatbubble-ellipses', color: COLORS.mediumBlue, route: '/support/chat' },
-    { label: 'FAQ', icon: 'help-circle', color: COLORS.lightBlue, route: '/support/faq' },
-    { label: 'Feedback', icon: 'document-text', color: COLORS.slate, route: '/profile/feedback' },
+    { label: 'Open Case', helper: 'Create request', icon: 'add-circle', color: COLORS.primary, route: '/trips/new' },
+    { label: 'Support', helper: 'Get help fast', icon: 'chatbubble-ellipses', color: COLORS.mediumBlue, route: '/support/chat' },
+    { label: 'FAQ', helper: 'Browse answers', icon: 'help-circle', color: COLORS.lightBlue, route: '/support/faq' },
+    { label: 'Feedback', helper: 'Share notes', icon: 'document-text', color: COLORS.slate, route: '/profile/feedback' },
   ];
 
   if (loading) {
@@ -129,11 +130,14 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TabScreenBackground />
       <View style={styles.headerShell}>
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Operations Overview</Text>
-            <Text style={styles.greeting}>Corporate travel workspace</Text>
+            <Text style={styles.greeting} numberOfLines={1} ellipsizeMode="tail">
+              Corporate travel workspace
+            </Text>
           </View>
           <TouchableOpacity style={styles.notificationBtn} onPress={() => router.push('/notifications')}>
             <Ionicons name="notifications-outline" size={24} color={COLORS.white} />
@@ -196,6 +200,7 @@ export default function HomeScreen() {
                   <Ionicons name={action.icon as keyof typeof Ionicons.glyphMap} size={24} color={action.color} />
                 </View>
                 <Text style={styles.actionText}>{action.label}</Text>
+                <Text style={styles.actionHelper}>{action.helper}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -293,7 +298,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, color: COLORS.gray, fontSize: 16 },
   headerShell: {
@@ -314,8 +319,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
   },
-  greeting: { fontSize: 13, color: COLORS.lightBlue, fontWeight: '600' },
-  title: { fontSize: 28, fontWeight: '700', color: COLORS.white, marginTop: 2 },
+  title: { fontSize: 28, fontWeight: '700', color: COLORS.white },
+  greeting: { fontSize: 14, color: COLORS.lightBlue, marginTop: 4, lineHeight: 20 },
   notificationBtn: {
     width: 48,
     height: 48,
@@ -412,6 +417,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   actionText: { fontSize: 15, fontWeight: '700', color: COLORS.black, lineHeight: 20 },
+  actionHelper: { fontSize: 12, color: COLORS.gray, marginTop: 4, lineHeight: 17 },
   emptyState: {
     backgroundColor: COLORS.white,
     borderRadius: 18,

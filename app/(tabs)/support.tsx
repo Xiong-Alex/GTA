@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { TabScreenBackground } from '../../components/tab-screen-background';
 
 const COLORS = {
   primary: '#0033A0',
@@ -70,10 +71,13 @@ export default function SupportScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TabScreenBackground />
       <View style={styles.headerContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Support Center</Text>
-          <Text style={styles.subtitle}>Designed for employee travel operations, issue triage, and fast assistance.</Text>
+          <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+            Designed for employee travel operations, issue triage, and fast assistance.
+          </Text>
         </View>
       </View>
 
@@ -150,7 +154,7 @@ export default function SupportScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
   headerContainer: {
     backgroundColor: COLORS.primary,
     borderBottomLeftRadius: 28,

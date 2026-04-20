@@ -14,12 +14,15 @@ import { useRouter } from 'expo-router';
 import { getNotifications, markNotificationRead } from '../lib/local-data';
 
 const COLORS = {
-  primary: '#0066CC',
+  primary: '#0033A0',
+  darkBlue: '#000063',
+  mediumBlue: '#2D67FF',
+  lightBlue: '#328DFF',
   secondary: '#00A86B',
   accent: '#FF6B35',
-  background: '#F5F7FA',
-  dark: '#1A1A2E',
-  gray: '#6B7280',
+  background: '#F0F4F8',
+  dark: '#000000',
+  gray: '#666666',
   lightGray: '#E5E7EB',
   white: '#FFFFFF',
   warning: '#F59E0B',

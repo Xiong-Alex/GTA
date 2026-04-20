@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import { getTrips } from '../../lib/local-data';
+import { TabScreenBackground } from '../../components/tab-screen-background';
 
 const COLORS = {
   primary: '#0033A0',
@@ -244,10 +245,13 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TabScreenBackground />
       <View style={styles.headerContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Coverage Map</Text>
-          <Text style={styles.subtitle}>Monitor active destinations and regional travel demand</Text>
+          <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+            Monitor active destinations and regional travel demand
+          </Text>
         </View>
       </View>
 
@@ -373,7 +377,7 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
     backgroundColor: COLORS.primary,

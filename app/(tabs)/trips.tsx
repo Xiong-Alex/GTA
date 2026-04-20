@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getTrips } from '../../lib/local-data';
+import { TabScreenBackground } from '../../components/tab-screen-background';
 
 const COLORS = {
   primary: '#0033A0',
@@ -120,11 +121,14 @@ export default function TripsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TabScreenBackground />
       <View style={styles.headerContainer}>
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Travel Cases</Text>
-            <Text style={styles.subtitle}>Manage all employee travel activity</Text>
+            <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+              Manage all employee travel activity
+            </Text>
           </View>
           <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/trips/new')}>
             <Ionicons name="add" size={24} color={COLORS.white} />
@@ -252,7 +256,7 @@ export default function TripsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
     backgroundColor: COLORS.primary,
@@ -273,7 +277,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   title: { fontSize: 28, fontWeight: '700', color: COLORS.white },
-  subtitle: { fontSize: 14, color: COLORS.lightBlue, marginTop: 4 },
+  subtitle: { fontSize: 14, color: COLORS.lightBlue, marginTop: 4, lineHeight: 20 },
   addBtn: {
     width: 48,
     height: 48,

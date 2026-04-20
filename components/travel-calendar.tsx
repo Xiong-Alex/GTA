@@ -22,6 +22,13 @@ const COLORS = {
   lightGray: '#E5E7EB',
 };
 
+const INDICATOR_COLORS: Record<CalendarEvent['type'], string> = {
+  trip: '#7EA8FF',
+  flight: '#56BBFF',
+  hotel: '#2A92B8',
+  meeting: '#83D7F0',
+};
+
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 interface TravelCalendarProps {
@@ -93,7 +100,7 @@ export function TravelCalendar({ events, emptyTitle, emptySubtitle }: TravelCale
               </Text>
               <View style={styles.dotRow}>
                 {dayEvents.slice(0, 3).map((event) => (
-                  <View key={event.id} style={[styles.dot, { backgroundColor: event.color }]} />
+                  <View key={event.id} style={[styles.dot, { backgroundColor: INDICATOR_COLORS[event.type] }]} />
                 ))}
               </View>
             </TouchableOpacity>
@@ -182,9 +189,10 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    columnGap: 2,
   },
   dayCell: {
-    width: '14.285%',
+    width: '13.4%',
     minHeight: 54,
     borderRadius: 14,
     backgroundColor: COLORS.background,

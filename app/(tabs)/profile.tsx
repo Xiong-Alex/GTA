@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getTrips, getUnreadNotificationCount } from '../../lib/local-data';
+import { TabScreenBackground } from '../../components/tab-screen-background';
 
 const COLORS = {
   primary: '#0033A0',
@@ -90,9 +91,13 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TabScreenBackground />
       <View style={styles.headerContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
+          <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+            Traveler profile, settings, and account preferences
+          </Text>
         </View>
       </View>
 
@@ -175,7 +180,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
     backgroundColor: COLORS.primary,
@@ -190,6 +195,7 @@ const styles = StyleSheet.create({
   },
   header: { paddingHorizontal: 20, paddingTop: 16 },
   title: { fontSize: 28, fontWeight: '700', color: COLORS.white },
+  subtitle: { fontSize: 14, color: COLORS.lightBlue, marginTop: 4, lineHeight: 20 },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',

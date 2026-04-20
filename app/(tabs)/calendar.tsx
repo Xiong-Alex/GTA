@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getTrips, Trip } from '../../lib/local-data';
 import { buildAllCalendarEvents } from '../../lib/calendar-data';
 import { TravelCalendar } from '../../components/travel-calendar';
+import { TabScreenBackground } from '../../components/tab-screen-background';
 
 const COLORS = {
   primary: '#0033A0',
@@ -51,10 +52,13 @@ export default function CalendarScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TabScreenBackground />
       <View style={styles.headerContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Travel Calendar</Text>
-          <Text style={styles.subtitle}>A single calendar view for trips, flights, hotel stays, and meetings.</Text>
+          <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+            A single calendar view for trips, flights, hotel stays, and meetings.
+          </Text>
         </View>
       </View>
 
@@ -94,7 +98,7 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
     backgroundColor: COLORS.primary,
