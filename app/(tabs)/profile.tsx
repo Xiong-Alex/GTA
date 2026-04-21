@@ -1,16 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getTrips, getUnreadNotificationCount } from '../../lib/local-data';
+import { LinearGradient } from 'expo-linear-gradient';
 import { TabScreenBackground } from '../../components/tab-screen-background';
 
 const COLORS = {
@@ -28,26 +27,8 @@ const COLORS = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ trips: 0, destinations: 0, budget: 0, alerts: 0 });
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const trips = await getTrips();
-        const alerts = await getUnreadNotificationCount();
-        setStats({
-          trips: trips.length,
-          destinations: new Set(trips.map((trip) => trip.destination)).size,
-          budget: trips.reduce((sum, trip) => sum + trip.budget, 0),
-          alerts,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
+  const [emailUpdatesEnabled, setEmailUpdatesEnabled] = useState(false);
 
   const menuItems = [
     {
@@ -64,30 +45,13 @@ export default function ProfileScreen() {
       subtitle: 'Log complaints, suggestions, and service quality observations.',
       route: '/profile/feedback',
     },
-    {
-      id: 'notifications',
-      icon: 'notifications',
-      title: 'Notifications',
-      subtitle: 'Review unread approvals, changes, and action items.',
-      route: '/notifications',
-    },
   ];
 
   const infoItems = [
     { id: 'mode', label: 'Prototype Mode', value: 'Local Demo' },
     { id: 'version', label: 'Release', value: '1.0.0' },
-    { id: 'build', label: 'Build', value: '2026.04.17' },
+    { id: 'build', label: 'Build', value: '2026.04.21' },
   ];
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -102,7 +66,12 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.userCard}>
+        <LinearGradient
+          colors={['#000063', '#000A75', '#163E9D']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.userCard}
+        >
           <View style={styles.avatar}>
             <Ionicons name="person" size={34} color={COLORS.white} />
           </View>
@@ -114,30 +83,7 @@ export default function ProfileScreen() {
           <View style={styles.companyBadge}>
             <Text style={styles.companyText}>CORP</Text>
           </View>
-        </View>
-
-        <View style={styles.statsCard}>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.trips}</Text>
-              <Text style={styles.statLabel}>Cases</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.destinations}</Text>
-              <Text style={styles.statLabel}>Cities</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.alerts}</Text>
-              <Text style={styles.statLabel}>Alerts</Text>
-            </View>
-          </View>
-          <View style={styles.budgetStrip}>
-            <Ionicons name="wallet-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.budgetStripText}>Tracked demo budget: ${stats.budget.toLocaleString()}</Text>
-          </View>
-        </View>
+        </LinearGradient>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Traveler Settings</Text>
@@ -153,6 +99,38 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
             </TouchableOpacity>
           ))}
+          <View style={styles.toggleItem}>
+            <View style={styles.menuIcon}>
+              <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuTitle}>Push Notifications</Text>
+              <Text style={styles.menuSubtitle}>Trip updates and Notices</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.toggleTrack, pushNotificationsEnabled && styles.toggleTrackActive]}
+              onPress={() => setPushNotificationsEnabled((current) => !current)}
+              activeOpacity={0.9}
+            >
+              <View style={[styles.toggleThumb, pushNotificationsEnabled && styles.toggleThumbActive]} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.toggleItem}>
+            <View style={styles.menuIcon}>
+              <Ionicons name="mail-outline" size={22} color={COLORS.primary} />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuTitle}>Email Updates</Text>
+              <Text style={styles.menuSubtitle}>newsletters</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.toggleTrack, emailUpdatesEnabled && styles.toggleTrackActive]}
+              onPress={() => setEmailUpdatesEnabled((current) => !current)}
+              activeOpacity={0.9}
+            >
+              <View style={[styles.toggleThumb, emailUpdatesEnabled && styles.toggleThumbActive]} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -181,11 +159,12 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
     backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingBottom: 18,
     shadowColor: COLORS.darkBlue,
     shadowOffset: { width: 0, height: 8 },
@@ -232,34 +211,6 @@ const styles = StyleSheet.create({
   companyText: { fontSize: 10, fontWeight: '700', color: COLORS.white },
   scrollView: { flex: 1 },
   content: { padding: 16, paddingTop: 16, paddingBottom: 28 },
-  statsCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(0,51,160,0.06)',
-    shadowColor: COLORS.darkBlue,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  statsRow: { flexDirection: 'row' },
-  statItem: { flex: 1, alignItems: 'center' },
-  statDivider: { width: 1, backgroundColor: COLORS.lightGray },
-  statValue: { fontSize: 26, fontWeight: '700', color: COLORS.primary },
-  statLabel: { fontSize: 12, color: COLORS.gray, marginTop: 4 },
-  budgetStrip: {
-    marginTop: 16,
-    backgroundColor: COLORS.primary + '10',
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  budgetStripText: { color: COLORS.primary, fontWeight: '600', fontSize: 13 },
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.black, marginBottom: 12 },
   menuItem: {
@@ -288,6 +239,41 @@ const styles = StyleSheet.create({
   menuContent: { flex: 1, marginLeft: 12, marginRight: 8 },
   menuTitle: { fontSize: 15, fontWeight: '700', color: COLORS.black },
   menuSubtitle: { fontSize: 12, color: COLORS.gray, marginTop: 4, lineHeight: 18 },
+  toggleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,51,160,0.06)',
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  toggleTrack: {
+    width: 50,
+    height: 30,
+    borderRadius: 999,
+    backgroundColor: '#CBD5E1',
+    padding: 3,
+    justifyContent: 'center',
+  },
+  toggleTrackActive: {
+    backgroundColor: COLORS.primary,
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
+  },
+  toggleThumbActive: {
+    alignSelf: 'flex-end',
+  },
   infoCard: { backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0,51,160,0.06)' },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
   infoRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.lightGray },

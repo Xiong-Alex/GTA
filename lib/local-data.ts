@@ -33,15 +33,28 @@ export interface Trip {
     checkout: string;
     address: string;
   }>;
-  meetings: Array<{
-    title: string;
-    date: string;
-    time: string;
-    location: string;
-  }>;
+  meetings: TripMeeting[];
   notes: string;
   created_at: string;
   coordinates: { lat: number; lng: number };
+}
+
+export interface TripMeeting {
+  title: string;
+  date: string;
+  end_date?: string;
+  time?: string;
+  start_time?: string;
+  end_time?: string;
+  all_day?: boolean;
+  location: string;
+  reminder_enabled?: boolean;
+  reminder?: string;
+  repeat?: string;
+  attachments?: string[];
+  notes?: string;
+  url?: string;
+  todo_list?: string[];
 }
 
 export interface NotificationItem {
@@ -73,6 +86,11 @@ export interface FAQItem {
   category: string;
   order: number;
 }
+
+export interface TripMeetingInput extends TripMeeting {}
+
+const DEFAULT_MEETING_REMINDER = '30 minutes before';
+const DEFAULT_MEETING_REPEAT = 'Does not repeat';
 
 const DESTINATION_COORDINATES: Record<string, { lat: number; lng: number }> = {
   "New York": { lat: 40.7128, lng: -74.006 },
@@ -121,7 +139,7 @@ const INITIAL_TRIPS: Trip[] = [
         name: "Marriott Marquis",
         checkin: "2026-07-15",
         checkout: "2026-07-18",
-        address: "1535 Broadway, New York",
+        address: "1535 Broadway, New York, NY 10036",
       },
     ],
     meetings: [
@@ -129,7 +147,7 @@ const INITIAL_TRIPS: Trip[] = [
         title: "Sales Review",
         date: "2026-07-16",
         time: "09:00",
-        location: "Conference Room A",
+        location: "New York Marriott Marquis, 1535 Broadway, New York, NY 10036",
       },
     ],
     notes: "",
@@ -182,13 +200,206 @@ const INITIAL_TRIPS: Trip[] = [
         name: "Park Hyatt Tokyo",
         checkin: "2026-09-02",
         checkout: "2026-09-05",
-        address: "3-7-1-2 Nishi Shinjuku",
+        address: "3-7-1-2 Nishi Shinjuku, Shinjuku City, Tokyo 163-1055, Japan",
       },
     ],
     meetings: [],
     notes: "",
     created_at: "2026-04-08T15:00:00.000Z",
     coordinates: DESTINATION_COORDINATES["Tokyo"],
+  },
+  {
+    id: "trip-4",
+    title: "Regional Ops Review",
+    destination: "London",
+    start_date: "2026-05-12",
+    end_date: "2026-05-16",
+    purpose: "Review EMEA travel operations and supplier performance",
+    status: "completed",
+    budget: 6200,
+    expenses: 6040,
+    traveler_name: "Maya Patel",
+    traveler_email: "maya.patel@company.com",
+    flights: [
+      {
+        airline: "British Airways",
+        flight: "BA268",
+        departure: "2026-05-12T17:25:00",
+        arrival: "2026-05-13T11:15:00",
+        from: "LAX",
+        to: "LHR",
+      },
+      {
+        airline: "British Airways",
+        flight: "BA269",
+        departure: "2026-05-16T13:40:00",
+        arrival: "2026-05-16T16:55:00",
+        from: "LHR",
+        to: "LAX",
+      },
+    ],
+    hotels: [
+      {
+        name: "Conrad London St. James",
+        checkin: "2026-05-13",
+        checkout: "2026-05-16",
+        address: "22-28 Broadway, London SW1H 0BH, UK",
+      },
+    ],
+    meetings: [
+      {
+        title: "EMEA Supplier Review",
+        date: "2026-05-14",
+        time: "10:00",
+        location: "Conrad London St. James, 22-28 Broadway, London SW1H 0BH, UK",
+      },
+    ],
+    notes: "Closed after regional review and vendor scorecard sign-off.",
+    created_at: "2026-03-20T09:30:00.000Z",
+    coordinates: DESTINATION_COORDINATES["London"],
+  },
+  {
+    id: "trip-5",
+    title: "Executive Site Visit",
+    destination: "Paris",
+    start_date: "2026-04-22",
+    end_date: "2026-04-25",
+    purpose: "Executive check-in with EU client leadership",
+    status: "active",
+    budget: 5400,
+    expenses: 2180,
+    traveler_name: "Alex Chen",
+    traveler_email: "alex.chen@company.com",
+    flights: [
+      {
+        airline: "Air France",
+        flight: "AF65",
+        departure: "2026-04-22T15:10:00",
+        arrival: "2026-04-23T09:20:00",
+        from: "JFK",
+        to: "CDG",
+      },
+      {
+        airline: "Air France",
+        flight: "AF22",
+        departure: "2026-04-25T11:30:00",
+        arrival: "2026-04-25T13:50:00",
+        from: "CDG",
+        to: "JFK",
+      },
+    ],
+    hotels: [
+      {
+        name: "Sofitel Le Faubourg",
+        checkin: "2026-04-23",
+        checkout: "2026-04-25",
+        address: "15 Rue Boissy d'Anglas, 75008 Paris, France",
+      },
+    ],
+    meetings: [
+      {
+        title: "Client Growth Workshop",
+        date: "2026-04-24",
+        time: "13:30",
+        location: "Station F, 5 Parvis Alan Turing, 75013 Paris, France",
+      },
+    ],
+    notes: "Traveler currently onsite and reporting live trip activity.",
+    created_at: "2026-04-14T11:10:00.000Z",
+    coordinates: DESTINATION_COORDINATES["Paris"],
+  },
+  {
+    id: "trip-6",
+    title: "Finance Closeout Summit",
+    destination: "Singapore",
+    start_date: "2026-02-03",
+    end_date: "2026-02-07",
+    purpose: "Year-end finance closeout planning with APAC stakeholders",
+    status: "completed",
+    budget: 7100,
+    expenses: 6825,
+    traveler_name: "Jordan Rivera",
+    traveler_email: "jordan.rivera@company.com",
+    flights: [
+      {
+        airline: "Singapore Airlines",
+        flight: "SQ11",
+        departure: "2026-02-03T08:45:00",
+        arrival: "2026-02-04T18:20:00",
+        from: "SFO",
+        to: "SIN",
+      },
+      {
+        airline: "Singapore Airlines",
+        flight: "SQ12",
+        departure: "2026-02-07T10:10:00",
+        arrival: "2026-02-07T08:45:00",
+        from: "SIN",
+        to: "SFO",
+      },
+    ],
+    hotels: [
+      {
+        name: "Marina Bay Sands",
+        checkin: "2026-02-04",
+        checkout: "2026-02-07",
+        address: "10 Bayfront Avenue, Singapore 018956",
+      },
+    ],
+    meetings: [
+      {
+        title: "Quarterly Finance Alignment",
+        date: "2026-02-05",
+        time: "09:00",
+        location: "Marina Bay Sands, 10 Bayfront Avenue, Singapore 018956",
+      },
+    ],
+    notes: "Trip closed with finance leadership sign-off and archived deliverables.",
+    created_at: "2026-01-18T16:00:00.000Z",
+    coordinates: DESTINATION_COORDINATES["Singapore"],
+  },
+  {
+    id: "trip-7",
+    title: "Vendor Renewal Audit",
+    destination: "Dubai",
+    start_date: "2026-01-14",
+    end_date: "2026-01-18",
+    purpose: "Audit travel vendor renewal package and contract controls",
+    status: "completed",
+    budget: 6600,
+    expenses: 6410,
+    traveler_name: "Sofia Martinez",
+    traveler_email: "sofia.martinez@company.com",
+    flights: [
+      {
+        airline: "Emirates",
+        flight: "EK226",
+        departure: "2026-01-14T12:40:00",
+        arrival: "2026-01-15T00:15:00",
+        from: "SFO",
+        to: "DXB",
+      },
+      {
+        airline: "Emirates",
+        flight: "EK225",
+        departure: "2026-01-18T08:20:00",
+        arrival: "2026-01-18T13:10:00",
+        from: "DXB",
+        to: "SFO",
+      },
+    ],
+    hotels: [
+      {
+        name: "JW Marriott Marquis Dubai",
+        checkin: "2026-01-15",
+        checkout: "2026-01-18",
+        address: "Sheikh Zayed Road, Business Bay, Dubai, UAE",
+      },
+    ],
+    meetings: [],
+    notes: "Closed after audit completion and commercial approval.",
+    created_at: "2025-12-28T13:25:00.000Z",
+    coordinates: DESTINATION_COORDINATES["Dubai"],
   },
 ];
 
@@ -311,11 +522,14 @@ export async function resetDemoData() {
 export async function getTrips() {
   await ensureInitialized();
   const trips = await readJson<Trip[]>(STORAGE_KEYS.trips, INITIAL_TRIPS);
-  const keptTrips = trips.filter((trip) => !shouldRemoveTrip(trip));
+  const seededTripIds = new Set(INITIAL_TRIPS.map((trip) => trip.id));
+  const userTrips = trips.filter((trip) => !seededTripIds.has(trip.id));
+  const withSeededTrips = [...INITIAL_TRIPS, ...userTrips];
+  const keptTrips = withSeededTrips.filter((trip) => !shouldRemoveTrip(trip));
 
-  if (keptTrips.length !== trips.length) {
+  if (keptTrips.length !== trips.length || withSeededTrips.length !== trips.length) {
     const removedTripIds = new Set(
-      trips.filter((trip) => shouldRemoveTrip(trip)).map((trip) => trip.id)
+      withSeededTrips.filter((trip) => shouldRemoveTrip(trip)).map((trip) => trip.id)
     );
     const notifications = await readJson<NotificationItem[]>(
       STORAGE_KEYS.notifications,
@@ -374,6 +588,60 @@ export async function createTrip(
   await writeJson(STORAGE_KEYS.notifications, [submissionNotification, ...notifications]);
 
   return trip;
+}
+
+export async function addTripMeeting(tripId: string, input: TripMeetingInput) {
+  const trips = await getTrips();
+  const normalizedMeeting: TripMeeting = {
+    ...input,
+    start_time: input.all_day ? undefined : input.start_time ?? input.time ?? '',
+    end_time: input.all_day ? undefined : input.end_time ?? '',
+    time: input.all_day ? 'All day' : input.start_time ?? input.time ?? '',
+    all_day: input.all_day ?? false,
+    reminder_enabled: input.reminder_enabled ?? true,
+    reminder: input.reminder ?? DEFAULT_MEETING_REMINDER,
+    repeat: input.repeat ?? DEFAULT_MEETING_REPEAT,
+    attachments: (input.attachments ?? []).filter(Boolean),
+    notes: input.notes?.trim() ?? '',
+    url: input.url?.trim() ?? '',
+    todo_list: (input.todo_list ?? []).map((item) => item.trim()).filter(Boolean),
+  };
+  const nextTrips = trips.map((trip) =>
+    trip.id === tripId
+      ? {
+          ...trip,
+          meetings: [...trip.meetings, normalizedMeeting].sort(
+            (a, b) =>
+              `${a.date}T${a.start_time ?? a.time ?? '00:00'}`.localeCompare(
+                `${b.date}T${b.start_time ?? b.time ?? '00:00'}`
+              )
+          ),
+        }
+      : trip
+  );
+
+  await writeJson(STORAGE_KEYS.trips, nextTrips);
+
+  const updatedTrip = nextTrips.find((trip) => trip.id === tripId) ?? null;
+
+  if (updatedTrip) {
+    const notifications = await getNotifications();
+    const eventNotification: NotificationItem = {
+      id: generateId("notif"),
+      type: "allocation",
+      title: "Trip Event Added",
+      message: `${input.title} was added to ${updatedTrip.title}.`,
+      trip_id: updatedTrip.id,
+      read: false,
+      action_required: false,
+      options: [],
+      created_at: new Date().toISOString(),
+    };
+
+    await writeJson(STORAGE_KEYS.notifications, [eventNotification, ...notifications]);
+  }
+
+  return updatedTrip;
 }
 
 export async function getNotifications() {

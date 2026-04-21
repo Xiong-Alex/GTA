@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { getTrips, Trip } from '../../lib/local-data';
 import { buildAllCalendarEvents } from '../../lib/calendar-data';
 import { TravelCalendar } from '../../components/travel-calendar';
@@ -18,6 +19,7 @@ const COLORS = {
 };
 
 export default function CalendarScreen() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -67,21 +69,6 @@ export default function CalendarScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchTrips(); }} colors={[COLORS.primary]} />}
       >
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{trips.length}</Text>
-            <Text style={styles.summaryLabel}>Trips</Text>
-          </View>
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{events.length}</Text>
-            <Text style={styles.summaryLabel}>Calendar Items</Text>
-          </View>
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{new Set(trips.map((trip) => trip.destination)).size}</Text>
-            <Text style={styles.summaryLabel}>Destinations</Text>
-          </View>
-        </View>
-
         <TravelCalendar
           events={events}
           emptyTitle="No activity on this day"
@@ -90,9 +77,20 @@ export default function CalendarScreen() {
 
         <View style={styles.helperCard}>
           <Ionicons name="information-circle-outline" size={18} color={COLORS.primary} />
-          <Text style={styles.helperText}>Trip calendars include trip span days plus flights, hotel check-ins, hotel check-outs, and meetings.</Text>
+          <Text style={styles.helperText}>
+            Trip calendars include trip span days plus flights,{'\n'}hotel check-ins, hotel
+            check-outs, and meetings.
+          </Text>
         </View>
       </ScrollView>
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/trips/add-event')}
+        activeOpacity={0.92}
+      >
+        <Ionicons name="add" size={28} color={COLORS.white} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -102,31 +100,27 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
     backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingBottom: 18,
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    elevation: 6,
   },
   header: { paddingHorizontal: 20, paddingTop: 16 },
   title: { fontSize: 28, fontWeight: '700', color: COLORS.white },
   subtitle: { fontSize: 14, color: COLORS.lightBlue, marginTop: 4, lineHeight: 20 },
   scrollView: { flex: 1 },
-  content: { padding: 16, paddingTop: 16, paddingBottom: 28 },
-  summaryCard: {
-    backgroundColor: COLORS.darkBlue,
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  summaryBlock: { flex: 1, alignItems: 'center' },
-  summaryValue: { fontSize: 22, fontWeight: '700', color: COLORS.white },
-  summaryLabel: { fontSize: 12, color: COLORS.lightBlue, marginTop: 4 },
+  content: { padding: 16, paddingTop: 18, paddingBottom: 104 },
   helperCard: {
     marginTop: 16,
     backgroundColor: COLORS.white,
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
@@ -135,6 +129,22 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: COLORS.gray,
-    lineHeight: 19,
+    lineHeight: 20,
+  },
+  fab: {
+    position: 'absolute',
+    right: 22,
+    bottom: 28,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 10,
   },
 });

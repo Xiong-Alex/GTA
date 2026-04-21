@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import {
   CalendarEvent,
   formatAgendaDate,
@@ -38,6 +39,7 @@ interface TravelCalendarProps {
 }
 
 export function TravelCalendar({ events, emptyTitle, emptySubtitle }: TravelCalendarProps) {
+  const router = useRouter();
   const initialMonth = events.length ? new Date(events[0].date) : new Date();
   const [currentMonth, setCurrentMonth] = useState(new Date(initialMonth.getFullYear(), initialMonth.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(events[0]?.date ?? getDateKey(new Date()));
@@ -117,7 +119,9 @@ export function TravelCalendar({ events, emptyTitle, emptySubtitle }: TravelCale
               <View style={styles.agendaContent}>
                 <Text style={styles.agendaItemTitle}>{event.title}</Text>
                 <Text style={styles.agendaItemSubtitle}>{event.subtitle}</Text>
-                <Text style={styles.agendaItemMeta}>{event.tripTitle}</Text>
+                <TouchableOpacity onPress={() => router.push(`/trips/${event.tripId}`)} activeOpacity={0.8}>
+                  <Text style={styles.agendaItemMeta}>{event.tripTitle}</Text>
+                </TouchableOpacity>
               </View>
             </View>
           ))
@@ -269,7 +273,7 @@ const styles = StyleSheet.create({
   },
   agendaItemMeta: {
     fontSize: 12,
-    color: COLORS.primary,
+    color: COLORS.gray,
     marginTop: 4,
     fontWeight: '600',
   },

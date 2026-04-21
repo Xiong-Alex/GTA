@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { TabScreenBackground } from '../../components/tab-screen-background';
 
 const COLORS = {
@@ -82,10 +83,15 @@ export default function SupportScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.heroCard}>
+        <LinearGradient
+          colors={['#000063', '#000A75', '#163E9D']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
           <Text style={styles.heroEyebrow}>Support coverage</Text>
           <Text style={styles.heroTitle}>Choose the right channel for policy help, service issues, or travel changes.</Text>
-        </View>
+        </LinearGradient>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Channels</Text>
@@ -157,8 +163,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
   headerContainer: {
     backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingBottom: 18,
     shadowColor: COLORS.darkBlue,
     shadowOffset: { width: 0, height: 8 },
@@ -172,7 +180,7 @@ const styles = StyleSheet.create({
   heroCard: {
     marginBottom: 24,
     backgroundColor: COLORS.darkBlue,
-    borderRadius: 22,
+    borderRadius: 24,
     padding: 20,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
@@ -180,10 +188,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
     shadowRadius: 18,
-    elevation: 5,
+    elevation: 6,
   },
   heroEyebrow: { color: COLORS.lightBlue, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
-  heroTitle: { color: COLORS.white, fontSize: 20, fontWeight: '700', lineHeight: 28, marginTop: 8 },
+  heroTitle: { color: COLORS.white, fontSize: 20, fontWeight: '600', lineHeight: 28, marginTop: 8 },
   scrollView: { flex: 1 },
   content: { padding: 16, paddingTop: 16, paddingBottom: 28 },
   section: { marginBottom: 24 },

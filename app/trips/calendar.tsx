@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { getTrip, Trip } from '../../lib/local-data';
 import { buildTripCalendarEvents } from '../../lib/calendar-data';
 import { TravelCalendar } from '../../components/travel-calendar';
@@ -23,19 +24,26 @@ export default function TripCalendarScreen() {
   const [loading, setLoading] = useState(true);
   const [trip, setTrip] = useState<Trip | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        if (tripId) {
-          const data = await getTrip(String(tripId));
-          setTrip(data);
-        }
-      } finally {
-        setLoading(false);
+  const loadTrip = useCallback(async () => {
+    try {
+      if (tripId) {
+        const data = await getTrip(String(tripId));
+        setTrip(data);
       }
-    };
-    load();
+    } finally {
+      setLoading(false);
+    }
   }, [tripId]);
+
+  useEffect(() => {
+    loadTrip();
+  }, [loadTrip]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTrip();
+    }, [loadTrip])
+  );
 
   if (loading) {
     return (
@@ -86,6 +94,19 @@ export default function TripCalendarScreen() {
           emptySubtitle="Pick another day to review flights, hotel dates, meetings, and trip span activity."
         />
       </ScrollView>
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() =>
+          router.push({
+            pathname: '/trips/add-event',
+            params: { tripId: trip.id, tripTitle: trip.title },
+          })
+        }
+        activeOpacity={0.92}
+      >
+        <Ionicons name="add" size={28} color={COLORS.white} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -118,7 +139,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700', color: COLORS.white },
   placeholder: { width: 44 },
   scrollView: { flex: 1 },
-  content: { padding: 16, paddingTop: 16, paddingBottom: 28 },
+  content: { padding: 16, paddingTop: 16, paddingBottom: 104 },
   heroCard: {
     backgroundColor: COLORS.darkBlue,
     borderRadius: 22,
@@ -142,5 +163,21 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.75)',
     marginTop: 8,
     lineHeight: 20,
+  },
+  fab: {
+    position: 'absolute',
+    right: 22,
+    bottom: 28,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 10,
   },
 });

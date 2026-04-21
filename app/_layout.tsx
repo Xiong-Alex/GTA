@@ -66,6 +66,8 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="trips/[id]" options={{ headerShown: false, presentation: 'card' }} />
           <Stack.Screen name="trips/calendar" options={{ headerShown: false, presentation: 'card' }} />
+          <Stack.Screen name="trips/map" options={{ headerShown: false, presentation: 'card' }} />
+          <Stack.Screen name="trips/add-event" options={{ headerShown: false, presentation: 'modal' }} />
           <Stack.Screen name="trips/new" options={{ headerShown: false, presentation: 'modal' }} />
           <Stack.Screen name="trips/report-expense" options={{ headerShown: false, presentation: 'modal' }} />
           <Stack.Screen name="notifications" options={{ headerShown: false, presentation: 'card' }} />

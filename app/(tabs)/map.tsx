@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   Dimensions,
   ActivityIndicator,
   RefreshControl,
@@ -11,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { WebView } from 'react-native-webview';
 import { getTrips } from '../../lib/local-data';
 import { TabScreenBackground } from '../../components/tab-screen-background';
@@ -29,7 +32,7 @@ const COLORS = {
   warning: '#F59E0B',
 };
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface Trip {
   id: string;
@@ -52,7 +55,27 @@ const REGION_BY_CITY: Record<string, string> = {
   'San Francisco': 'Americas',
 };
 
-const buildMapHtml = (trips: Trip[]) => {
+const STATUS_RANK: Record<string, number> = {
+  active: 0,
+  in_progress: 0,
+  approved: 1,
+  pending: 2,
+  completed: 3,
+};
+
+const toDateOnly = (value: string) => new Date(`${value}T00:00:00`);
+
+const isActiveTrip = (trip: Trip) => {
+  if (trip.status === 'active' || trip.status === 'in_progress') return true;
+  if (trip.status === 'completed') return false;
+
+  const now = new Date();
+  const start = toDateOnly(trip.start_date);
+  const end = toDateOnly(trip.end_date);
+  return now >= start && now <= end;
+};
+
+const buildMapHtml = (trips: Trip[], focusCoords: { lat: number; lng: number }[]) => {
   const grouped = trips.reduce<Record<string, { city: string; lat: number; lng: number; status: string; trips: Trip[] }>>(
     (acc, trip) => {
       const key = `${trip.destination}-${trip.coordinates.lat}-${trip.coordinates.lng}`;
@@ -71,20 +94,28 @@ const buildMapHtml = (trips: Trip[]) => {
     {}
   );
 
-  const markers = Object.values(grouped).map((group) => ({
-    city: group.city,
-    lat: group.lat,
-    lng: group.lng,
-    status: group.status,
-    count: group.trips.length,
-    trips: group.trips.map((trip) => ({
-      title: trip.title,
-      status: trip.status.replace('_', ' '),
-      dates: `${new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(trip.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
-    })),
-  }));
+  const markers = Object.values(grouped).map((group) => {
+    const sortedTrips = [...group.trips].sort(
+      (a, b) => (STATUS_RANK[a.status] ?? 99) - (STATUS_RANK[b.status] ?? 99)
+    );
+    const markerStatus = sortedTrips[0]?.status ?? group.status;
+
+    return {
+      city: group.city,
+      lat: group.lat,
+      lng: group.lng,
+      status: markerStatus,
+      count: group.trips.length,
+      trips: sortedTrips.map((trip) => ({
+        title: trip.title,
+        status: trip.status.replace('_', ' '),
+        dates: `${new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(trip.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+      })),
+    };
+  });
 
   const markersJson = JSON.stringify(markers);
+  const focusCoordsJson = JSON.stringify(focusCoords);
 
   return `<!DOCTYPE html>
 <html>
@@ -123,6 +154,7 @@ const buildMapHtml = (trips: Trip[]) => {
       }
       .status-approved { background: #00A86B; }
       .status-pending { background: #F59E0B; }
+      .status-active { background: #2D67FF; }
       .status-in_progress { background: #2D67FF; }
       .status-completed { background: #666666; }
     </style>
@@ -136,6 +168,7 @@ const buildMapHtml = (trips: Trip[]) => {
     ></script>
     <script>
       const markers = ${markersJson};
+      const focusCoords = ${focusCoordsJson};
       const map = L.map('map', {
         zoomControl: true,
         worldCopyJump: true
@@ -175,10 +208,13 @@ const buildMapHtml = (trips: Trip[]) => {
         L.marker([marker.lat, marker.lng], { icon }).addTo(map).bindPopup(popup);
       });
 
-      if (bounds.length === 1) {
-        map.setView(bounds[0], 4);
-      } else if (bounds.length > 1) {
-        map.fitBounds(bounds, { padding: [36, 36] });
+      const focusBounds = focusCoords.map((point) => [point.lat, point.lng]);
+      const viewportBounds = focusBounds.length ? focusBounds : bounds;
+
+      if (viewportBounds.length === 1) {
+        map.setView(viewportBounds[0], 5);
+      } else if (viewportBounds.length > 1) {
+        map.fitBounds(viewportBounds, { padding: [56, 56], maxZoom: 5 });
       }
     </script>
   </body>
@@ -186,6 +222,7 @@ const buildMapHtml = (trips: Trip[]) => {
 };
 
 export default function MapScreen() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -211,26 +248,94 @@ export default function MapScreen() {
     fetchTrips();
   };
 
-  const getTripsByDestination = (destination: string) => trips.filter((trip) => trip.destination === destination);
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
         return COLORS.success;
       case 'pending':
         return COLORS.warning;
+      case 'active':
       case 'in_progress':
         return COLORS.mediumBlue;
+      case 'completed':
+        return COLORS.gray;
       default:
         return COLORS.gray;
     }
   };
 
+  const locationPriority = useMemo(() => {
+    const today = new Date();
+    const futureCutoff = new Date(`${today.toISOString().split('T')[0]}T00:00:00`);
+
+    const cities = Object.keys(REGION_BY_CITY)
+      .map((city) => {
+        const cityTrips = trips.filter((trip) => trip.destination === city);
+        if (!cityTrips.length) return null;
+
+        const activeTrips = cityTrips.filter((trip) => isActiveTrip(trip));
+        const upcomingTrips = cityTrips
+          .filter((trip) => toDateOnly(trip.start_date) >= futureCutoff && trip.status !== 'completed')
+          .sort((a, b) => a.start_date.localeCompare(b.start_date));
+        const nextTrip = upcomingTrips[0] ?? null;
+        const topStatus =
+          [...cityTrips].sort((a, b) => (STATUS_RANK[a.status] ?? 99) - (STATUS_RANK[b.status] ?? 99))[0]?.status ?? 'completed';
+
+        return {
+          city,
+          region: REGION_BY_CITY[city],
+          trips: cityTrips,
+          activeCount: activeTrips.length,
+          nextTrip,
+          topStatus,
+        };
+      })
+      .filter(Boolean) as {
+      city: string;
+      region: string;
+      trips: Trip[];
+      activeCount: number;
+      nextTrip: Trip | null;
+      topStatus: string;
+    }[];
+
+    return cities.sort((a, b) => {
+      const aActive = a.activeCount > 0 ? 0 : 1;
+      const bActive = b.activeCount > 0 ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+
+      const aNext = a.nextTrip?.start_date ?? '9999-12-31';
+      const bNext = b.nextTrip?.start_date ?? '9999-12-31';
+      if (aNext !== bNext) return aNext.localeCompare(bNext);
+
+      return a.city.localeCompare(b.city);
+    });
+  }, [trips]);
+
+  const focusLocation = locationPriority[0] ?? null;
+  const viewportFocusCoords = useMemo(() => {
+    const activeTrips = trips.filter((trip) => isActiveTrip(trip));
+    const latestTrip = [...trips].sort((a, b) => b.start_date.localeCompare(a.start_date))[0] ?? null;
+
+    const focusTrips = [...activeTrips];
+    if (latestTrip && !focusTrips.some((trip) => trip.id === latestTrip.id)) {
+      focusTrips.push(latestTrip);
+    }
+
+    const uniqueByCoord = new Map<string, { lat: number; lng: number }>();
+    focusTrips.forEach((trip) => {
+      const key = `${trip.coordinates.lat.toFixed(4)},${trip.coordinates.lng.toFixed(4)}`;
+      if (!uniqueByCoord.has(key)) {
+        uniqueByCoord.set(key, trip.coordinates);
+      }
+    });
+
+    return Array.from(uniqueByCoord.values());
+  }, [trips]);
+
   const mapWidth = width - 32;
-  const mapHeight = mapWidth * 0.62;
-  const activeRegions = new Set(
-    trips.map((trip) => REGION_BY_CITY[trip.destination]).filter(Boolean)
-  ).size;
-  const mapHtml = buildMapHtml(trips);
+  const mapHeight = Math.round(height * 0.33);
+  const mapHtml = buildMapHtml(trips, viewportFocusCoords);
   const isWeb = Platform.OS === 'web';
 
   if (loading) {
@@ -260,23 +365,6 @@ export default function MapScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
       >
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{trips.length}</Text>
-            <Text style={styles.summaryLabel}>Cases</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{new Set(trips.map((trip) => trip.destination)).size}</Text>
-            <Text style={styles.summaryLabel}>Cities</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{activeRegions}</Text>
-            <Text style={styles.summaryLabel}>Regions</Text>
-          </View>
-        </View>
-
         <View style={styles.mapContainer}>
           <View style={[styles.mapPlaceholder, { width: mapWidth, height: mapHeight }]}>
             {isWeb ? (
@@ -301,35 +389,36 @@ export default function MapScreen() {
           </View>
         </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: COLORS.primary + '15' }]}>
-              <Ionicons name="airplane" size={22} color={COLORS.primary} />
-            </View>
-            <Text style={styles.statValue}>{trips.length}</Text>
-            <Text style={styles.statLabel}>Tracked Cases</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
-              <Ionicons name="business" size={22} color={COLORS.mediumBlue} />
-            </View>
-            <Text style={styles.statValue}>{activeRegions}</Text>
-            <Text style={styles.statLabel}>Active Regions</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: COLORS.warning + '15' }]}>
-              <Ionicons name="time" size={22} color={COLORS.warning} />
-            </View>
-            <Text style={styles.statValue}>{trips.filter((trip) => trip.status === 'pending').length}</Text>
-            <Text style={styles.statLabel}>Awaiting Action</Text>
-          </View>
-        </View>
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Destination Demand</Text>
-          <Text style={styles.sectionSubtitle}>Grouped by city to highlight where travel support is concentrated.</Text>
+          <Text style={styles.sectionSubtitle}>Prioritized by active locations first, then next upcoming destinations.</Text>
 
-          {Object.keys(REGION_BY_CITY).filter((city) => getTripsByDestination(city).length > 0).length === 0 ? (
+          {focusLocation && (
+            <LinearGradient
+              colors={['#000063', '#000A75', '#163E9D']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.focusCard}
+            >
+              <View style={[styles.focusDot, { backgroundColor: getStatusColor(focusLocation.topStatus) }]} />
+              <View style={styles.focusContent}>
+                <Text style={styles.focusLabel}>Current Focus</Text>
+                <Text style={styles.focusTitle}>{focusLocation.city}</Text>
+                <Text style={styles.focusText}>
+                  {focusLocation.activeCount > 0
+                    ? `${focusLocation.activeCount} active case${focusLocation.activeCount > 1 ? 's' : ''} in progress now.`
+                    : focusLocation.nextTrip
+                    ? `Next departure: ${new Date(focusLocation.nextTrip.start_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}.`
+                    : 'No upcoming departures scheduled.'}
+                </Text>
+              </View>
+            </LinearGradient>
+          )}
+
+          {locationPriority.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
                 <Ionicons name="globe-outline" size={48} color={COLORS.lightBlue} />
@@ -337,22 +426,44 @@ export default function MapScreen() {
               <Text style={styles.emptyText}>No mapped destinations yet</Text>
             </View>
           ) : (
-            Object.keys(REGION_BY_CITY).filter((city) => getTripsByDestination(city).length > 0).map((city) => {
-              const cityTrips = getTripsByDestination(city);
+            locationPriority.map((location) => {
+              const cityTrips = location.trips;
               return (
-                <View key={city} style={styles.destinationCard}>
+                <View key={location.city} style={styles.destinationCard}>
                   <View style={styles.destinationTop}>
                     <View style={styles.destinationInfo}>
-                      <Text style={styles.destinationName}>{city}</Text>
-                      <Text style={styles.destinationRegion}>{REGION_BY_CITY[city]}</Text>
+                      <Text style={styles.destinationName}>{location.city}</Text>
+                      <Text style={styles.destinationRegion}>{location.region}</Text>
                     </View>
-                    <View style={styles.destinationCountBadge}>
+                    <View style={[styles.destinationCountBadge, { backgroundColor: getStatusColor(location.topStatus) + '15' }]}>
                       <Text style={styles.destinationCountText}>{cityTrips.length} cases</Text>
                     </View>
                   </View>
+                  <View style={styles.locationPriorityStrip}>
+                    <Ionicons
+                      name={location.activeCount > 0 ? 'flash-outline' : 'calendar-outline'}
+                      size={13}
+                      color={COLORS.primary}
+                    />
+                    <Text style={styles.locationPriorityText}>
+                      {location.activeCount > 0
+                        ? `${location.activeCount} active case${location.activeCount > 1 ? 's' : ''}`
+                        : location.nextTrip
+                        ? `Next: ${new Date(location.nextTrip.start_date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          })}`
+                        : 'No upcoming departures'}
+                    </Text>
+                  </View>
 
                   {cityTrips.map((trip) => (
-                    <View key={trip.id} style={styles.caseRow}>
+                    <TouchableOpacity
+                      key={trip.id}
+                      style={styles.caseRow}
+                      activeOpacity={0.85}
+                      onPress={() => router.push(`/trips/${trip.id}`)}
+                    >
                       <View style={[styles.caseDot, { backgroundColor: getStatusColor(trip.status) }]} />
                       <View style={styles.caseContent}>
                         <Text style={styles.caseTitle}>{trip.title}</Text>
@@ -364,7 +475,7 @@ export default function MapScreen() {
                       <Text style={[styles.caseStatus, { color: getStatusColor(trip.status) }]}>
                         {trip.status.replace('_', ' ')}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                   ))}
                 </View>
               );
@@ -381,8 +492,10 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
     backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingBottom: 18,
     shadowColor: COLORS.darkBlue,
     shadowOffset: { width: 0, height: 8 },
@@ -393,26 +506,8 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 16 },
   title: { fontSize: 28, fontWeight: '700', color: COLORS.white },
   subtitle: { fontSize: 14, color: COLORS.lightBlue, marginTop: 4, lineHeight: 20 },
-  summaryCard: {
-    marginBottom: 20,
-    backgroundColor: COLORS.darkBlue,
-    borderRadius: 22,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    shadowColor: COLORS.darkBlue,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 5,
-  },
-  summaryBlock: { flex: 1, alignItems: 'center' },
-  summaryDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.15)' },
-  summaryValue: { color: COLORS.white, fontSize: 22, fontWeight: '700' },
-  summaryLabel: { color: COLORS.lightBlue, fontSize: 12, marginTop: 4 },
   scrollView: { flex: 1 },
-  content: { padding: 16, paddingTop: 16, paddingBottom: 28 },
+  content: { padding: 16, paddingTop: 18, paddingBottom: 30 },
   mapContainer: { marginBottom: 20 },
   mapPlaceholder: {
     backgroundColor: COLORS.white,
@@ -450,35 +545,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  legendTitle: { fontSize: 10, fontWeight: '700', color: COLORS.primary },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  statCard: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,51,160,0.06)',
-    shadowColor: COLORS.darkBlue,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  statIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: { fontSize: 24, fontWeight: '700', color: COLORS.black },
-  statLabel: { fontSize: 12, color: COLORS.gray, marginTop: 4, textAlign: 'center' },
+  legendTitle: { fontSize: 10, fontWeight: '700', color: COLORS.primary, letterSpacing: 0.5 },
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.black },
-  sectionSubtitle: { fontSize: 13, color: COLORS.gray, marginTop: 4, lineHeight: 18, marginBottom: 12 },
+  sectionTitle: { fontSize: 20, fontWeight: '800', color: COLORS.black },
+  sectionSubtitle: { fontSize: 13, color: COLORS.gray, marginTop: 4, lineHeight: 19, marginBottom: 12 },
+  focusCard: {
+    backgroundColor: COLORS.darkBlue,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  focusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  focusContent: { flex: 1 },
+  focusLabel: { fontSize: 11, fontWeight: '700', color: COLORS.lightBlue, textTransform: 'uppercase' },
+  focusTitle: { fontSize: 16, fontWeight: '700', color: COLORS.white, marginTop: 2 },
+  focusText: { fontSize: 12, color: 'rgba(255,255,255,0.82)', marginTop: 4, lineHeight: 18 },
   emptyState: { backgroundColor: COLORS.white, borderRadius: 18, padding: 32, alignItems: 'center' },
   emptyIcon: {
     width: 80,
@@ -504,10 +594,21 @@ const styles = StyleSheet.create({
   },
   destinationTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   destinationInfo: {},
-  destinationName: { fontSize: 17, fontWeight: '700', color: COLORS.black },
+  destinationName: { fontSize: 18, fontWeight: '700', color: COLORS.black },
   destinationRegion: { fontSize: 13, color: COLORS.gray, marginTop: 4 },
   destinationCountBadge: { backgroundColor: COLORS.primary + '12', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 },
   destinationCountText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  locationPriorityStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+    gap: 6,
+  },
+  locationPriorityText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
   caseRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -518,7 +619,7 @@ const styles = StyleSheet.create({
   },
   caseDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
   caseContent: { flex: 1 },
-  caseTitle: { fontSize: 14, fontWeight: '600', color: COLORS.black },
+  caseTitle: { fontSize: 15, fontWeight: '600', color: COLORS.black, lineHeight: 20 },
   caseDates: { fontSize: 12, color: COLORS.gray, marginTop: 3 },
   caseStatus: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
 });

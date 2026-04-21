@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,6 +41,7 @@ interface Trip {
   status: string;
   budget: number;
   expenses: number;
+  traveler_name?: string;
   flights?: unknown[];
   hotels?: unknown[];
   meetings?: unknown[];
@@ -51,6 +53,7 @@ export default function TripsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [filter, setFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchTrips = async () => {
     try {
@@ -73,7 +76,23 @@ export default function TripsScreen() {
     fetchTrips();
   };
 
-  const filteredTrips = trips.filter((trip) => (filter === 'all' ? true : trip.status === filter));
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredTrips = trips.filter((trip) => {
+    const matchesFilter =
+      filter === 'all'
+        ? true
+        : filter === 'active'
+        ? trip.status === 'active' || trip.status === 'in_progress'
+        : trip.status === filter;
+    const matchesSearch =
+      normalizedQuery.length === 0
+        ? true
+        : [trip.title, trip.destination, trip.traveler_name ?? ''].some((value) =>
+            value.toLowerCase().includes(normalizedQuery)
+          );
+
+    return matchesFilter && matchesSearch;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -81,6 +100,7 @@ export default function TripsScreen() {
         return COLORS.success;
       case 'pending':
         return COLORS.warning;
+      case 'active':
       case 'in_progress':
         return COLORS.mediumBlue;
       case 'completed':
@@ -97,17 +117,11 @@ export default function TripsScreen() {
 
   const filters = [
     { key: 'all', label: 'All' },
-    { key: 'pending', label: 'Pending' },
+    { key: 'active', label: 'Active' },
     { key: 'approved', label: 'Approved' },
-    { key: 'in_progress', label: 'Active' },
+    { key: 'pending', label: 'Pending' },
     { key: 'completed', label: 'Closed' },
   ];
-
-  const summary = {
-    total: trips.length,
-    pending: trips.filter((trip) => trip.status === 'pending').length,
-    active: trips.filter((trip) => trip.status === 'in_progress' || trip.status === 'approved').length,
-  };
 
   if (loading) {
     return (
@@ -136,22 +150,21 @@ export default function TripsScreen() {
         </View>
       </View>
 
-      <View style={styles.summaryWrapper}>
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{summary.total}</Text>
-            <Text style={styles.summaryLabel}>Total</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{summary.active}</Text>
-            <Text style={styles.summaryLabel}>Tracked</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryBlock}>
-            <Text style={styles.summaryValue}>{summary.pending}</Text>
-            <Text style={styles.summaryLabel}>Pending</Text>
-          </View>
+      <View style={styles.searchWrapper}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color={COLORS.gray} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search trips, destinations, or travelers"
+            placeholderTextColor="#97A1AF"
+            style={styles.searchInput}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={COLORS.gray} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -184,7 +197,11 @@ export default function TripsScreen() {
             </View>
             <Text style={styles.emptyTitle}>No travel cases found</Text>
             <Text style={styles.emptySubtitle}>
-              {filter === 'all' ? 'Create a new case to start tracking travel.' : `No ${filter.replace('_', ' ')} cases right now.`}
+              {searchQuery.trim()
+                ? 'Try another search term or clear the search bar.'
+                : filter === 'all'
+                ? 'Create a new case to start tracking travel.'
+                : `No ${filter.replace('_', ' ')} cases right now.`}
             </Text>
           </View>
         ) : (
@@ -260,8 +277,10 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
     backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingBottom: 18,
     shadowColor: COLORS.darkBlue,
     shadowOffset: { width: 0, height: 8 },
@@ -286,42 +305,47 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  summaryWrapper: {
+  searchWrapper: {
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  summaryCard: {
-    backgroundColor: COLORS.darkBlue,
-    borderRadius: 22,
-    paddingVertical: 16,
+  searchBar: {
     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(0,51,160,0.08)',
     shadowColor: COLORS.darkBlue,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+    gap: 8,
   },
-  summaryBlock: { flex: 1, alignItems: 'center' },
-  summaryDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.14)' },
-  summaryValue: { fontSize: 22, fontWeight: '700', color: COLORS.white },
-  summaryLabel: { fontSize: 12, color: COLORS.lightBlue, marginTop: 4 },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.black,
+    paddingVertical: 0,
+  },
   filterScroll: { maxHeight: 64, backgroundColor: COLORS.background },
   filterContent: { paddingHorizontal: 16, paddingVertical: 12, gap: 8, flexDirection: 'row' },
   filterChip: {
     paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingVertical: 11,
     borderRadius: 25,
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.lightGray,
   },
   filterChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary, shadowColor: COLORS.primary, shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
-  filterText: { fontSize: 14, fontWeight: '600', color: COLORS.gray },
+  filterText: { fontSize: 13, fontWeight: '600', color: COLORS.gray },
   filterTextActive: { color: COLORS.white },
   scrollView: { flex: 1 },
-  content: { padding: 16, paddingBottom: 28 },
+  content: { padding: 16, paddingBottom: 30 },
   emptyState: { alignItems: 'center', paddingVertical: 64 },
   emptyIcon: {
     width: 100,
@@ -333,7 +357,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.black, marginTop: 8 },
-  emptySubtitle: { fontSize: 14, color: COLORS.gray, marginTop: 8, textAlign: 'center' },
+  emptySubtitle: { fontSize: 14, color: COLORS.gray, marginTop: 8, textAlign: 'center', lineHeight: 20 },
   tripCard: {
     backgroundColor: COLORS.white,
     borderRadius: 18,
@@ -357,10 +381,10 @@ const styles = StyleSheet.create({
   },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
   statusText: { fontSize: 12, fontWeight: '700' },
-  tripTitle: { fontSize: 18, fontWeight: '700', color: COLORS.black, marginTop: 12 },
+  tripTitle: { fontSize: 19, fontWeight: '700', color: COLORS.black, marginTop: 12, lineHeight: 24 },
   tripDetails: { marginTop: 10, gap: 6 },
   tripDetail: { flexDirection: 'row', alignItems: 'center' },
-  tripDetailText: { fontSize: 13, color: COLORS.gray, marginLeft: 8 },
+  tripDetailText: { fontSize: 13, color: COLORS.gray, marginLeft: 8, lineHeight: 18 },
   metricsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -374,8 +398,8 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   metric: { flex: 1 },
-  metricLabel: { fontSize: 11, color: COLORS.gray, textTransform: 'uppercase' },
-  metricValue: { fontSize: 15, fontWeight: '700', color: COLORS.black, marginTop: 4 },
+  metricLabel: { fontSize: 10, color: COLORS.gray, textTransform: 'uppercase', letterSpacing: 0.6 },
+  metricValue: { fontSize: 16, fontWeight: '700', color: COLORS.black, marginTop: 4 },
   overBudget: { color: COLORS.error },
   progressContainer: { marginTop: 14 },
   progressBar: { height: 8, backgroundColor: COLORS.lightGray, borderRadius: 999, overflow: 'hidden' },

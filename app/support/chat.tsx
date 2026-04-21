@@ -134,9 +134,16 @@ export default function ChatScreen() {
             <View style={styles.placeholder} />
           </View>
 
-          <View style={styles.heroStrip}>
-            <Text style={styles.heroStripText}>Use this to simulate help with flights, hotels, reimbursements, and travel disruptions.</Text>
-          </View>
+          <TouchableOpacity style={styles.liveAgentStrip} onPress={() => sendMessage('I want to chat with a live agent.')}>
+            <View style={styles.liveAgentIcon}>
+              <Ionicons name="headset" size={18} color={COLORS.primary} />
+            </View>
+            <View style={styles.liveAgentContent}>
+              <Text style={styles.liveAgentTitle}>Chat with a live agent</Text>
+              <Text style={styles.liveAgentSubtitle}>Escalate this request for human support and issue routing.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.white} />
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -264,16 +271,41 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.white },
   headerSubtitle: { fontSize: 12, color: COLORS.lightBlue, marginTop: 2 },
   placeholder: { width: 44 },
-  heroStrip: {
+  liveAgentStrip: {
     marginHorizontal: 16,
     marginTop: 14,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.16)',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.10)',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  heroStripText: { color: COLORS.white, fontSize: 13, lineHeight: 19 },
+  liveAgentIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  liveAgentContent: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 10,
+  },
+  liveAgentTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  liveAgentSubtitle: {
+    fontSize: 12,
+    color: COLORS.lightBlue,
+    marginTop: 3,
+    lineHeight: 17,
+  },
   messagesContainer: { flex: 1 },
   messagesContent: { padding: 16, paddingBottom: 22 },
   messageRow: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-end' },

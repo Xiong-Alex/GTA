@@ -20,8 +20,19 @@ const EVENT_COLORS: Record<CalendarEventType, string> = {
   meeting: '#00A86B',
 };
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const parseCalendarDate = (value: string) => {
+  if (DATE_ONLY_PATTERN.test(value)) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  return new Date(value);
+};
+
 const toIsoDate = (value: string) => {
-  const date = new Date(value);
+  const date = parseCalendarDate(value);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -29,15 +40,37 @@ const toIsoDate = (value: string) => {
 };
 
 const formatShort = (value: string) =>
-  new Date(value).toLocaleDateString('en-US', {
+  parseCalendarDate(value).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
   });
 
+const formatTime = (value: string) =>
+  parseCalendarDate(value).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+const formatMeetingSubtitle = (meeting: Trip['meetings'][number]) => {
+  const schedule = meeting.all_day
+    ? 'All day'
+    : meeting.start_time && meeting.end_time
+    ? `${meeting.start_time} - ${meeting.end_time}`
+    : meeting.start_time ?? meeting.time ?? '';
+
+  if (schedule && meeting.location) {
+    return `${schedule} at ${meeting.location}`;
+  }
+
+  return schedule || meeting.location || 'Trip event';
+};
+
+const toDateOnly = (value: string) => toIsoDate(value);
+
 const enumerateDates = (startDate: string, endDate: string) => {
   const dates: string[] = [];
-  const cursor = new Date(startDate);
-  const end = new Date(endDate);
+  const cursor = parseCalendarDate(startDate);
+  const end = parseCalendarDate(endDate);
 
   while (cursor <= end) {
     dates.push(toIsoDate(cursor.toISOString()));
@@ -49,17 +82,29 @@ const enumerateDates = (startDate: string, endDate: string) => {
 
 export function buildTripCalendarEvents(trip: Trip): CalendarEvent[] {
   const events: CalendarEvent[] = [];
+  const sortedFlights = [...trip.flights].sort((a, b) => a.departure.localeCompare(b.departure));
+  const outboundFlight = sortedFlights[0];
+  const returnFlight = sortedFlights.length > 1 ? sortedFlights[sortedFlights.length - 1] : null;
 
   enumerateDates(trip.start_date, trip.end_date).forEach((date, index) => {
+    const startsWithFlight =
+      outboundFlight && toDateOnly(outboundFlight.departure) === date
+        ? `Outbound flight ${outboundFlight.from} to ${outboundFlight.to} at ${formatTime(outboundFlight.departure)}`
+        : null;
+    const endsWithFlight =
+      returnFlight && toDateOnly(returnFlight.departure) === date
+        ? `Return flight ${returnFlight.from} to ${returnFlight.to} at ${formatTime(returnFlight.departure)}`
+        : null;
+
     events.push({
       id: `${trip.id}-trip-${date}`,
       date,
       title: trip.title,
       subtitle:
         index === 0
-          ? `Trip starts in ${trip.destination}`
+          ? startsWithFlight ?? `Trip starts in ${trip.destination}`
           : date === toIsoDate(trip.end_date)
-          ? `Trip ends in ${trip.destination}`
+          ? endsWithFlight ?? `Trip ends in ${trip.destination}`
           : `Trip active in ${trip.destination}`,
       type: 'trip',
       tripId: trip.id,
@@ -73,7 +118,7 @@ export function buildTripCalendarEvents(trip: Trip): CalendarEvent[] {
       id: `${trip.id}-flight-depart-${index}`,
       date: toIsoDate(flight.departure),
       title: `${flight.airline} ${flight.flight}`,
-      subtitle: `${flight.from} to ${flight.to} departure`,
+      subtitle: `${formatTime(flight.departure)} departure from ${flight.from} to ${flight.to}`,
       type: 'flight',
       tripId: trip.id,
       tripTitle: trip.title,
@@ -109,7 +154,7 @@ export function buildTripCalendarEvents(trip: Trip): CalendarEvent[] {
       id: `${trip.id}-meeting-${index}`,
       date: toIsoDate(meeting.date),
       title: meeting.title,
-      subtitle: `${meeting.time} at ${meeting.location}`,
+      subtitle: formatMeetingSubtitle(meeting),
       type: 'meeting',
       tripId: trip.id,
       tripTitle: trip.title,
@@ -125,7 +170,7 @@ export function buildAllCalendarEvents(trips: Trip[]) {
 }
 
 export function formatAgendaDate(date: string) {
-  return new Date(date).toLocaleDateString('en-US', {
+  return parseCalendarDate(date).toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',

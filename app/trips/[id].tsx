@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getTrip } from '../../lib/local-data';
 
 const COLORS = {
@@ -74,15 +76,29 @@ interface FlightSegment {
   to: string;
 }
 
+type SectionKey = 'expenses' | 'health' | 'logistics' | 'context';
+
 export default function TripDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [trip, setTrip] = useState<Trip | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
+    expenses: false,
+    health: false,
+    logistics: false,
+    context: false,
+  });
 
   useEffect(() => {
     fetchTrip();
   }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTrip();
+    }, [id])
+  );
 
   const fetchTrip = async () => {
     try {
@@ -101,6 +117,7 @@ export default function TripDetailScreen() {
         return COLORS.success;
       case 'pending':
         return COLORS.warning;
+      case 'active':
       case 'in_progress':
         return COLORS.mediumBlue;
       case 'completed':
@@ -176,6 +193,22 @@ export default function TripDetailScreen() {
   const getFlightStatusUrl = (flight: FlightSegment) =>
     `https://www.google.com/search?q=${encodeURIComponent(`${flight.airline} ${flight.flight} flight status`)}`;
 
+  const getFlightLegLabel = (flights: FlightSegment[], index: number) => {
+    if (flights.length === 1) {
+      return 'One-Way';
+    }
+
+    if (index === 0) {
+      return 'Outbound';
+    }
+
+    if (index === flights.length - 1) {
+      return 'Return';
+    }
+
+    return `Segment ${index + 1}`;
+  };
+
   const handleOpenLink = async (url: string, fallbackLabel: string) => {
     try {
       const supported = await Linking.canOpenURL(url);
@@ -192,6 +225,21 @@ export default function TripDetailScreen() {
 
   const handlePlaceholderAction = (label: string) => {
     Alert.alert(label, 'This is a prototype action for now. The button is here to show where this workflow would live.');
+  };
+
+  const toggleSection = (key: SectionKey) => {
+    setExpandedSections((current) => ({ ...current, [key]: !current[key] }));
+  };
+
+  const focusSection = (key: SectionKey) => {
+    const nextState: Record<SectionKey, boolean> = {
+      expenses: false,
+      health: false,
+      logistics: false,
+      context: false,
+    };
+    nextState[key] = true;
+    setExpandedSections(nextState);
   };
 
   if (loading) {
@@ -268,7 +316,12 @@ export default function TripDetailScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
       >
-        <View style={styles.summaryCard}>
+        <LinearGradient
+          colors={['#000063', '#000A75', '#163E9D']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.summaryCard}
+        >
           <Text style={styles.summaryEyebrow}>Case Summary</Text>
           <View style={styles.heroTopRow}>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) }]}>
@@ -284,7 +337,7 @@ export default function TripDetailScreen() {
 
           <Text style={styles.summaryTitle}>{trip.title}</Text>
           <View style={styles.summaryMeta}>
-            <Ionicons name="location" size={18} color={COLORS.primary} />
+            <Ionicons name="location" size={18} color={COLORS.lightBlue} />
             <Text style={styles.summaryDestination}>{trip.destination}</Text>
           </View>
           <Text style={styles.summarySubtitle}>
@@ -311,353 +364,446 @@ export default function TripDetailScreen() {
               <Text style={styles.summaryStatLabel}>Active Alerts</Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, { backgroundColor: COLORS.success + '15' }]}>
-              <Ionicons name="wallet" size={20} color={COLORS.success} />
-            </View>
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>Expenses and Budget</Text>
-              <Text style={styles.cardSubtitle}>Track spend and report meals, rides, and other trip costs with receipts in one flow.</Text>
-            </View>
-          </View>
-
-          <View style={styles.kpiRow}>
-            <View style={styles.kpiBlock}>
-              <Text style={styles.kpiLabel}>Spent</Text>
-              <Text style={styles.kpiValue}>${trip.expenses.toLocaleString()}</Text>
-            </View>
-            <View style={styles.kpiBlock}>
-              <Text style={styles.kpiLabel}>Remaining</Text>
-              <Text style={[styles.kpiValue, remaining < 0 && styles.overBudget]}>
-                ${remaining.toLocaleString()}
-              </Text>
-            </View>
-            <View style={styles.kpiBlock}>
-              <Text style={styles.kpiLabel}>Utilization</Text>
-              <Text style={styles.kpiValue}>{Math.round(spendPercent)}%</Text>
-            </View>
-          </View>
-
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${spendPercent}%`,
-                  backgroundColor: trip.expenses > trip.budget ? COLORS.error : COLORS.success,
-                },
-              ]}
-            />
-          </View>
-          <Text style={styles.progressCaption}>
-            {trip.expenses > trip.budget
-              ? 'Spending is above budget and should be reviewed.'
-              : 'Spending is currently within approved budget.'}
-          </Text>
-          <View style={styles.expenseActionRow}>
-            <TouchableOpacity style={styles.primaryActionBtn} onPress={() => router.push({ pathname: '/trips/report-expense', params: { tripId: trip.id, tripTitle: trip.title } })}>
-              <Ionicons name="receipt-outline" size={16} color={COLORS.white} />
-              <Text style={styles.primaryActionBtnText}>Report Expense + Receipt</Text>
+        <View style={styles.quickActionsCard}>
+          <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+          <Text style={styles.quickActionsSubtitle}>Fast access to the most-used workflows for this case.</Text>
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity
+              style={styles.quickActionBtn}
+              onPress={() => router.push({ pathname: '/trips/report-expense', params: { tripId: trip.id, tripTitle: trip.title } })}
+            >
+              <View style={styles.quickActionIconWrap}>
+                <Ionicons name="receipt-outline" size={16} color={COLORS.primary} />
+              </View>
+              <Text style={styles.quickActionText}>Report Expense</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryActionBtn} onPress={() => handlePlaceholderAction('Expense policy')}>
-              <Ionicons name="information-circle-outline" size={16} color={COLORS.primary} />
-              <Text style={styles.secondaryActionBtnText}>Policy and Help</Text>
+            <TouchableOpacity
+              style={styles.quickActionBtn}
+              onPress={() => router.push({ pathname: '/trips/calendar', params: { tripId: trip.id } })}
+            >
+              <View style={styles.quickActionIconWrap}>
+                <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
+              </View>
+              <Text style={styles.quickActionText}>Trip Calendar</Text>
             </TouchableOpacity>
-          </View>
-          <View style={styles.expenseHintRow}>
-            <View style={styles.expenseHint}>
-              <Text style={styles.expenseHintLabel}>Estimated unfiled items</Text>
-              <Text style={styles.expenseHintValue}>{trip.expenses ? 2 : 0}</Text>
-            </View>
-            <View style={styles.expenseHint}>
-              <Text style={styles.expenseHintLabel}>Avg per trip day</Text>
-              <Text style={styles.expenseHintValue}>${Math.round(trip.expenses / tripDurationDays).toLocaleString()}</Text>
-            </View>
-            <View style={styles.expenseHint}>
-              <Text style={styles.expenseHintLabel}>Receipt batch</Text>
-              <Text style={styles.expenseHintValue}>${estimatedUnfiledExpenses.toLocaleString()}</Text>
-            </View>
+            <TouchableOpacity style={styles.quickActionBtn} onPress={() => focusSection('logistics')}>
+              <View style={styles.quickActionIconWrap}>
+                <Ionicons name="airplane-outline" size={16} color={COLORS.primary} />
+              </View>
+              <Text style={styles.quickActionText}>View Logistics</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickActionBtn}
+              onPress={() => router.push({ pathname: '/trips/map', params: { tripId: trip.id } })}
+            >
+              <View style={styles.quickActionIconWrap}>
+                <Ionicons name="map-outline" size={16} color={COLORS.primary} />
+              </View>
+              <Text style={styles.quickActionText}>Map View</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
-              <Ionicons name="shield-checkmark" size={20} color={COLORS.mediumBlue} />
+          <TouchableOpacity style={styles.accordionToggle} onPress={() => toggleSection('expenses')} activeOpacity={0.9}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIcon, { backgroundColor: COLORS.success + '15' }]}>
+                <Ionicons name="wallet" size={20} color={COLORS.success} />
+              </View>
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.cardTitle}>Expenses and Budget</Text>
+                <Text style={styles.cardSubtitle}>Track spend and report meals, rides, and other trip costs with receipts in one flow.</Text>
+              </View>
+              <Ionicons name={expandedSections.expenses ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.gray} />
             </View>
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>Readiness Checklist</Text>
-            </View>
-          </View>
-          {readinessItems.map((item) => (
-            <View key={item.label} style={styles.checklistRow}>
-              <View
-                style={[
-                  styles.checkIcon,
-                  { backgroundColor: item.complete ? COLORS.success + '20' : COLORS.warning + '18' },
-                ]}
-              >
-                <Ionicons
-                  name={item.complete ? 'checkmark' : 'time-outline'}
-                  size={16}
-                  color={item.complete ? COLORS.success : COLORS.warning}
+          </TouchableOpacity>
+
+          {expandedSections.expenses && (
+            <>
+              <View style={styles.kpiRow}>
+                <View style={styles.kpiBlock}>
+                  <Text style={styles.kpiLabel}>Spent</Text>
+                  <Text style={styles.kpiValue}>${trip.expenses.toLocaleString()}</Text>
+                </View>
+                <View style={styles.kpiBlock}>
+                  <Text style={styles.kpiLabel}>Remaining</Text>
+                  <Text style={[styles.kpiValue, remaining < 0 && styles.overBudget]}>
+                    ${remaining.toLocaleString()}
+                  </Text>
+                </View>
+                <View style={styles.kpiBlock}>
+                  <Text style={styles.kpiLabel}>Utilization</Text>
+                  <Text style={styles.kpiValue}>{Math.round(spendPercent)}%</Text>
+                </View>
+              </View>
+
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${spendPercent}%`,
+                      backgroundColor: trip.expenses > trip.budget ? COLORS.error : COLORS.success,
+                    },
+                  ]}
                 />
               </View>
-              <Text style={styles.checkLabel}>{item.label}</Text>
-              <Text style={[styles.checkStatus, { color: item.complete ? COLORS.success : COLORS.warning }]}>
-                {item.complete ? 'Ready' : 'Open'}
+              <Text style={styles.progressCaption}>
+                {trip.expenses > trip.budget
+                  ? 'Spending is above budget and should be reviewed.'
+                  : 'Spending is currently within approved budget.'}
               </Text>
-            </View>
-          ))}
-        </View>
-
-        {!!riskFlags.length && (
-          <View style={styles.alertCard}>
-            <View style={styles.alertHeader}>
-              <Ionicons name="warning" size={18} color={COLORS.warning} />
-              <Text style={styles.alertTitle}>Operational Alerts</Text>
-            </View>
-            {riskFlags.map((flag) => (
-              <View key={flag} style={styles.alertRow}>
-                <View style={styles.alertDot} />
-                <Text style={styles.alertText}>{flag}</Text>
+              <View style={styles.expenseActionRow}>
+                <TouchableOpacity style={styles.primaryActionBtn} onPress={() => router.push({ pathname: '/trips/report-expense', params: { tripId: trip.id, tripTitle: trip.title } })}>
+                  <Ionicons name="receipt-outline" size={16} color={COLORS.white} />
+                  <Text style={styles.primaryActionBtnText}>Report Expense + Receipt</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.secondaryActionBtn} onPress={() => handlePlaceholderAction('Expense policy')}>
+                  <Ionicons name="information-circle-outline" size={16} color={COLORS.primary} />
+                  <Text style={styles.secondaryActionBtnText}>Policy and Help</Text>
+                </TouchableOpacity>
               </View>
-            ))}
-          </View>
-        )}
-
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
-              <Ionicons name="airplane" size={20} color={COLORS.mediumBlue} />
-            </View>
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>Flights</Text>
-              <Text style={styles.cardSubtitle}>Outbound and return flight details, timing, and external tracking links.</Text>
-            </View>
-          </View>
-          <View style={styles.sectionSummaryRow}>
-            <View style={styles.sectionSummaryChip}>
-              <Ionicons name="airplane-outline" size={14} color={COLORS.primary} />
-              <Text style={styles.sectionSummaryText}>{flightStatus}</Text>
-            </View>
-            <View style={styles.sectionSummaryChip}>
-              <Ionicons name="calendar-outline" size={14} color={COLORS.primary} />
-              <Text style={styles.sectionSummaryText}>{formatShortDate(trip.start_date)} to {formatShortDate(trip.end_date)}</Text>
-            </View>
-          </View>
-
-          {trip.flights.length > 0 ? (
-            <>
-              {trip.flights.map((flight, index) => (
-                <View key={index} style={[styles.flightCard, index > 0 && styles.flightCardSpacing]}>
-                  <View style={styles.flightHeader}>
-                    <View>
-                      <Text style={styles.flightAirline}>{flight.airline}</Text>
-                      <Text style={styles.flightDate}>{formatDateTime(flight.departure)}</Text>
-                    </View>
-                    <View style={styles.flightNumberBadge}>
-                      <Text style={styles.flightNumber}>{flight.flight}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.flightRoute}>
-                    <View style={styles.flightPoint}>
-                      <Text style={styles.airportCode}>{flight.from}</Text>
-                      <Text style={styles.flightTime}>{formatTime(flight.departure)}</Text>
-                    </View>
-                    <View style={styles.flightLine}>
-                      <View style={styles.line} />
-                      <View style={styles.planeIcon}>
-                        <Ionicons name="airplane" size={16} color={COLORS.primary} />
-                      </View>
-                      <View style={styles.line} />
-                    </View>
-                    <View style={[styles.flightPoint, { alignItems: 'flex-end' }]}>
-                      <Text style={styles.airportCode}>{flight.to}</Text>
-                      <Text style={styles.flightTime}>{formatTime(flight.arrival)}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.flightActionRow}>
-                    <TouchableOpacity
-                      style={styles.secondaryActionBtn}
-                      onPress={() => handleOpenLink(getAirlineWebsite(flight.airline), `${flight.airline} website`)}
-                    >
-                      <Ionicons name="globe-outline" size={16} color={COLORS.primary} />
-                      <Text style={styles.secondaryActionBtnText}>Airline Site</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.primaryActionBtn}
-                      onPress={() => handleOpenLink(getFlightStatusUrl(flight), `${flight.flight} details`)}
-                    >
-                      <Ionicons name="open-outline" size={16} color={COLORS.white} />
-                      <Text style={styles.primaryActionBtnText}>Flight Details</Text>
-                    </TouchableOpacity>
-                  </View>
+              <View style={styles.expenseHintRow}>
+                <View style={styles.expenseHint}>
+                  <Text style={styles.expenseHintLabel}>Estimated unfiled items</Text>
+                  <Text style={styles.expenseHintValue}>{trip.expenses ? 2 : 0}</Text>
                 </View>
-              ))}
+                <View style={styles.expenseHint}>
+                  <Text style={styles.expenseHintLabel}>Avg per trip day</Text>
+                  <Text style={styles.expenseHintValue}>${Math.round(trip.expenses / tripDurationDays).toLocaleString()}</Text>
+                </View>
+                <View style={styles.expenseHint}>
+                  <Text style={styles.expenseHintLabel}>Receipt batch</Text>
+                  <Text style={styles.expenseHintValue}>${estimatedUnfiledExpenses.toLocaleString()}</Text>
+                </View>
+              </View>
             </>
-          ) : (
-            <View style={styles.emptyServiceCard}>
-              <Ionicons name="airplane-outline" size={28} color={COLORS.mediumBlue} />
-              <Text style={styles.emptyServiceTitle}>No flights attached yet</Text>
-              <Text style={styles.emptyServiceText}>Add or assign outbound and return transportation so the traveler can review details here.</Text>
-              <TouchableOpacity style={styles.primaryActionBtn} onPress={() => handlePlaceholderAction('Assign transportation')}>
-                <Ionicons name="add-circle-outline" size={16} color={COLORS.white} />
-                <Text style={styles.primaryActionBtnText}>Assign Transportation</Text>
-              </TouchableOpacity>
-            </View>
           )}
         </View>
 
         <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, { backgroundColor: COLORS.lightBlue + '15' }]}>
-              <Ionicons name="bed" size={20} color={COLORS.lightBlue} />
+          <TouchableOpacity style={styles.accordionToggle} onPress={() => toggleSection('health')} activeOpacity={0.9}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
+                <Ionicons name="layers-outline" size={20} color={COLORS.mediumBlue} />
+              </View>
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.cardTitle}>Trip Health</Text>
+                <Text style={styles.cardSubtitle}>Readiness signals and active operational alerts in one place.</Text>
+              </View>
+              <Ionicons name={expandedSections.health ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.gray} />
             </View>
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>Stay and Lodging</Text>
-              <Text style={styles.cardSubtitle}>Hotel assignment, address, and check-in details.</Text>
-            </View>
-          </View>
-          <View style={styles.sectionSummaryRow}>
-            <View style={styles.sectionSummaryChip}>
-              <Ionicons name="bed-outline" size={14} color={COLORS.primary} />
-              <Text style={styles.sectionSummaryText}>{lodgingStatus}</Text>
-            </View>
-          </View>
-          {trip.hotels.length > 0 ? (
-            trip.hotels.map((hotel, index) => (
-              <View key={index} style={[styles.hotelCard, index > 0 && styles.hotelCardSpacing]}>
-                <Text style={styles.hotelName}>{hotel.name}</Text>
-                <View style={styles.hotelMeta}>
-                  <Ionicons name="location-outline" size={14} color={COLORS.gray} />
-                  <Text style={styles.hotelAddress}>{hotel.address}</Text>
+          </TouchableOpacity>
+          {expandedSections.health && (
+            <>
+              <View style={styles.kpiRow}>
+                <View style={styles.kpiBlock}>
+                  <Text style={styles.kpiLabel}>Readiness</Text>
+                  <Text style={styles.kpiValue}>{readinessScore}%</Text>
                 </View>
-                <View style={styles.hotelDates}>
-                  <View style={styles.hotelDateItem}>
-                    <Text style={styles.hotelDateLabel}>Check-in</Text>
-                    <Text style={styles.hotelDateValue}>{formatDate(hotel.checkin)}</Text>
-                  </View>
-                  <View style={styles.hotelDateItem}>
-                    <Text style={styles.hotelDateLabel}>Check-out</Text>
-                    <Text style={styles.hotelDateValue}>{formatDate(hotel.checkout)}</Text>
-                  </View>
+                <View style={styles.kpiBlock}>
+                  <Text style={styles.kpiLabel}>Alerts</Text>
+                  <Text style={styles.kpiValue}>{riskFlags.length}</Text>
                 </View>
-                <View style={styles.hotelActionRow}>
-                  <TouchableOpacity style={styles.secondaryActionBtn} onPress={() => handlePlaceholderAction('Hotel details')}>
-                    <Ionicons name="business-outline" size={16} color={COLORS.primary} />
-                    <Text style={styles.secondaryActionBtnText}>Hotel Details</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.primaryActionBtn} onPress={() => handlePlaceholderAction('Stay support')}>
-                    <Ionicons name="help-buoy-outline" size={16} color={COLORS.white} />
-                    <Text style={styles.primaryActionBtnText}>Stay Support</Text>
-                  </TouchableOpacity>
+                <View style={styles.kpiBlock}>
+                  <Text style={styles.kpiLabel}>Phase</Text>
+                  <Text style={styles.kpiValue}>{phase}</Text>
                 </View>
               </View>
-            ))
-          ) : (
-            <View style={styles.emptyServiceCard}>
-              <Ionicons name="bed-outline" size={28} color={COLORS.lightBlue} />
-              <Text style={styles.emptyServiceTitle}>No hotel attached yet</Text>
-              <Text style={styles.emptyServiceText}>Once lodging is booked, hotel details and receipt actions will show here.</Text>
-              <TouchableOpacity style={styles.primaryActionBtn} onPress={() => handlePlaceholderAction('Assign stay')}>
-                <Ionicons name="add-circle-outline" size={16} color={COLORS.white} />
-                <Text style={styles.primaryActionBtnText}>Assign Stay</Text>
-              </TouchableOpacity>
-            </View>
+              {readinessItems.map((item) => (
+                <View key={item.label} style={styles.checklistRow}>
+                  <View
+                    style={[
+                      styles.checkIcon,
+                      { backgroundColor: item.complete ? COLORS.success + '20' : COLORS.warning + '18' },
+                    ]}
+                  >
+                    <Ionicons
+                      name={item.complete ? 'checkmark' : 'time-outline'}
+                      size={16}
+                      color={item.complete ? COLORS.success : COLORS.warning}
+                    />
+                  </View>
+                  <Text style={styles.checkLabel}>{item.label}</Text>
+                  <Text style={[styles.checkStatus, { color: item.complete ? COLORS.success : COLORS.warning }]}>
+                    {item.complete ? 'Ready' : 'Open'}
+                  </Text>
+                </View>
+              ))}
+              {!!riskFlags.length && (
+                <View style={styles.inlineAlerts}>
+                  <Text style={styles.inlineAlertsTitle}>Active alerts</Text>
+                  {riskFlags.map((flag) => (
+                    <View key={flag} style={styles.alertRow}>
+                      <View style={styles.alertDot} />
+                      <Text style={styles.alertText}>{flag}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
           )}
         </View>
 
         <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, { backgroundColor: COLORS.slate + '15' }]}>
-              <Ionicons name="person" size={20} color={COLORS.slate} />
+          <TouchableOpacity style={styles.accordionToggle} onPress={() => toggleSection('logistics')} activeOpacity={0.9}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIcon, { backgroundColor: COLORS.mediumBlue + '15' }]}>
+                <Ionicons name="airplane" size={20} color={COLORS.mediumBlue} />
+              </View>
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.cardTitle}>Travel Logistics</Text>
+                <Text style={styles.cardSubtitle}>Flights and lodging organized in one operational view.</Text>
+              </View>
+              <Ionicons name={expandedSections.logistics ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.gray} />
             </View>
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>Trip Details</Text>
-              <Text style={styles.cardSubtitle}>Traveler, dates, destination, and related trip context.</Text>
-            </View>
-          </View>
-          <View style={styles.detailGrid}>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>Traveler</Text>
-              <Text style={styles.detailValue}>{trip.traveler_name}</Text>
-              <Text style={styles.detailSubvalue}>{trip.traveler_email}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>Destination</Text>
-              <Text style={styles.detailValue}>{trip.destination}</Text>
-              <Text style={styles.detailSubvalue}>{phase}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>Start</Text>
-              <Text style={styles.detailValue}>{formatShortDate(trip.start_date)}</Text>
-              <Text style={styles.detailSubvalue}>{formatDate(trip.start_date)}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>End</Text>
-              <Text style={styles.detailValue}>{formatShortDate(trip.end_date)}</Text>
-              <Text style={styles.detailSubvalue}>{formatDate(trip.end_date)}</Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.calendarStrip}
-            onPress={() => router.push({ pathname: '/trips/calendar', params: { tripId: trip.id } })}
-          >
-            <View style={styles.calendarStripIcon}>
-              <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
-            </View>
-            <View style={styles.calendarStripContent}>
-              <Text style={styles.calendarStripTitle}>Open Trip Calendar</Text>
-              <Text style={styles.calendarStripText}>See all trip days, flights, hotel dates, and meetings in calendar view.</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
           </TouchableOpacity>
-          {!!trip.purpose && (
-            <View style={styles.textBlock}>
-              <Text style={styles.textBlockLabel}>Business Purpose</Text>
-              <Text style={styles.purposeText}>{trip.purpose}</Text>
-            </View>
-          )}
-          {trip.meetings.length > 0 && (
-            <View style={styles.textBlock}>
-              <Text style={styles.textBlockLabel}>Meetings</Text>
-              {trip.meetings.map((meeting, index) => (
-                <View key={index} style={[styles.meetingItem, index > 0 && styles.meetingItemBorder]}>
-                  <Text style={styles.meetingTitle}>{meeting.title}</Text>
-                  <View style={styles.meetingMeta}>
-                    <Ionicons name="calendar-outline" size={14} color={COLORS.gray} />
-                    <Text style={styles.meetingText}>
-                      {formatDate(meeting.date)} at {meeting.time}
-                    </Text>
-                  </View>
-                  <View style={styles.meetingMeta}>
-                    <Ionicons name="location-outline" size={14} color={COLORS.gray} />
-                    <Text style={styles.meetingText}>{meeting.location}</Text>
-                  </View>
+          {expandedSections.logistics && (
+            <>
+              <View style={styles.sectionSummaryRow}>
+                <View style={styles.sectionSummaryChip}>
+                  <Ionicons name="airplane-outline" size={14} color={COLORS.primary} />
+                  <Text style={styles.sectionSummaryText}>{flightStatus}</Text>
                 </View>
-              ))}
-            </View>
+                <View style={styles.sectionSummaryChip}>
+                  <Ionicons name="bed-outline" size={14} color={COLORS.primary} />
+                  <Text style={styles.sectionSummaryText}>{lodgingStatus}</Text>
+                </View>
+              </View>
+              <View style={styles.subsectionBlock}>
+                <Text style={styles.subsectionTitle}>Flights</Text>
+                <Text style={styles.subsectionDescription}>Outbound and return flight details, timing, and tracking links.</Text>
+                {trip.flights.length > 0 ? (
+                  <>
+                    {trip.flights.map((flight, index) => (
+                      <View key={index} style={[styles.flightCard, index > 0 && styles.flightCardSpacing]}>
+                        <View style={styles.flightHeader}>
+                          <View>
+                            <View style={styles.flightLegBadge}>
+                              <Text style={styles.flightLegBadgeText}>{getFlightLegLabel(trip.flights, index)}</Text>
+                            </View>
+                            <Text style={styles.flightAirline}>{flight.airline}</Text>
+                            <Text style={styles.flightDate}>{formatDateTime(flight.departure)}</Text>
+                          </View>
+                          <View style={styles.flightNumberBadge}>
+                            <Text style={styles.flightNumber}>{flight.flight}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.flightRoute}>
+                          <View style={styles.flightPoint}>
+                            <Text style={styles.airportCode}>{flight.from}</Text>
+                            <Text style={styles.flightTime}>{formatTime(flight.departure)}</Text>
+                          </View>
+                          <View style={styles.flightLine}>
+                            <View style={styles.line} />
+                            <View style={styles.planeIcon}>
+                              <Ionicons name="airplane" size={16} color={COLORS.primary} />
+                            </View>
+                            <View style={styles.line} />
+                          </View>
+                          <View style={[styles.flightPoint, { alignItems: 'flex-end' }]}>
+                            <Text style={styles.airportCode}>{flight.to}</Text>
+                            <Text style={styles.flightTime}>{formatTime(flight.arrival)}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.flightActionRow}>
+                          <TouchableOpacity
+                            style={styles.secondaryActionBtn}
+                            onPress={() => handleOpenLink(getAirlineWebsite(flight.airline), `${flight.airline} website`)}
+                          >
+                            <Ionicons name="globe-outline" size={16} color={COLORS.primary} />
+                            <Text style={styles.secondaryActionBtnText}>Airline Site</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.primaryActionBtn}
+                            onPress={() => handleOpenLink(getFlightStatusUrl(flight), `${flight.flight} details`)}
+                          >
+                            <Ionicons name="open-outline" size={16} color={COLORS.white} />
+                            <Text style={styles.primaryActionBtnText}>Flight Details</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </>
+                ) : (
+                  <View style={styles.emptyServiceCard}>
+                    <Ionicons name="airplane-outline" size={28} color={COLORS.mediumBlue} />
+                    <Text style={styles.emptyServiceTitle}>No flights attached yet</Text>
+                    <Text style={styles.emptyServiceText}>Add or assign outbound and return transportation so the traveler can review details here.</Text>
+                    <TouchableOpacity style={styles.primaryActionBtn} onPress={() => handlePlaceholderAction('Assign transportation')}>
+                      <Ionicons name="add-circle-outline" size={16} color={COLORS.white} />
+                      <Text style={styles.primaryActionBtnText}>Assign Transportation</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+              <View style={[styles.subsectionBlock, styles.subsectionDivider]}>
+                <Text style={styles.subsectionTitle}>Stay and Lodging</Text>
+                <Text style={styles.subsectionDescription}>Hotel assignment, address, and support actions.</Text>
+                {trip.hotels.length > 0 ? (
+                  trip.hotels.map((hotel, index) => (
+                    <View key={index} style={[styles.hotelCard, index > 0 && styles.hotelCardSpacing]}>
+                      <Text style={styles.hotelName}>{hotel.name}</Text>
+                      <View style={styles.hotelMeta}>
+                        <Ionicons name="location-outline" size={14} color={COLORS.gray} />
+                        <Text style={styles.hotelAddress}>{hotel.address}</Text>
+                      </View>
+                      <View style={styles.hotelDates}>
+                        <View style={styles.hotelDateItem}>
+                          <Text style={styles.hotelDateLabel}>Check-in</Text>
+                          <Text style={styles.hotelDateValue}>{formatDate(hotel.checkin)}</Text>
+                        </View>
+                        <View style={styles.hotelDateItem}>
+                          <Text style={styles.hotelDateLabel}>Check-out</Text>
+                          <Text style={styles.hotelDateValue}>{formatDate(hotel.checkout)}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.hotelActionRow}>
+                        <TouchableOpacity style={styles.secondaryActionBtn} onPress={() => handlePlaceholderAction('Hotel details')}>
+                          <Ionicons name="business-outline" size={16} color={COLORS.primary} />
+                          <Text style={styles.secondaryActionBtnText}>Hotel Details</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.primaryActionBtn} onPress={() => handlePlaceholderAction('Stay support')}>
+                          <Ionicons name="help-buoy-outline" size={16} color={COLORS.white} />
+                          <Text style={styles.primaryActionBtnText}>Stay Support</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyServiceCard}>
+                    <Ionicons name="bed-outline" size={28} color={COLORS.lightBlue} />
+                    <Text style={styles.emptyServiceTitle}>No hotel attached yet</Text>
+                    <Text style={styles.emptyServiceText}>Once lodging is booked, hotel details and receipt actions will show here.</Text>
+                    <TouchableOpacity style={styles.primaryActionBtn} onPress={() => handlePlaceholderAction('Assign stay')}>
+                      <Ionicons name="add-circle-outline" size={16} color={COLORS.white} />
+                      <Text style={styles.primaryActionBtnText}>Assign Stay</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </>
           )}
-          {!!trip.notes && (
-            <View style={styles.textBlock}>
-              <Text style={styles.textBlockLabel}>Operational Notes</Text>
-              <Text style={styles.purposeText}>{trip.notes}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.accordionToggle} onPress={() => toggleSection('context')} activeOpacity={0.9}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIcon, { backgroundColor: COLORS.slate + '15' }]}>
+                <Ionicons name="person" size={20} color={COLORS.slate} />
+              </View>
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.cardTitle}>Context and Support</Text>
+                <Text style={styles.cardSubtitle}>Traveler details, purpose, meetings, notes, and related support actions.</Text>
+              </View>
+              <Ionicons name={expandedSections.context ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.gray} />
             </View>
-          )}
-          <TouchableOpacity style={styles.supportStrip} onPress={() => router.push('/support/chat')}>
-            <View style={styles.supportStripIcon}>
-              <Ionicons name="help-buoy-outline" size={18} color={COLORS.primary} />
-            </View>
-            <View style={styles.supportStripContent}>
-              <Text style={styles.supportStripTitle}>Need help with this trip?</Text>
-              <Text style={styles.supportStripText}>Open support for changes, exceptions, or traveler issues.</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
           </TouchableOpacity>
+          {expandedSections.context && (
+            <>
+              <View style={styles.detailGrid}>
+                <View style={styles.detailCard}>
+                  <Text style={styles.detailLabel}>Traveler</Text>
+                  <Text style={styles.detailValue}>{trip.traveler_name}</Text>
+                  <Text style={styles.detailSubvalue}>{trip.traveler_email}</Text>
+                </View>
+                <View style={styles.detailCard}>
+                  <Text style={styles.detailLabel}>Destination</Text>
+                  <Text style={styles.detailValue}>{trip.destination}</Text>
+                  <Text style={styles.detailSubvalue}>{phase}</Text>
+                </View>
+                <View style={styles.detailCard}>
+                  <Text style={styles.detailLabel}>Start</Text>
+                  <Text style={styles.detailValue}>{formatShortDate(trip.start_date)}</Text>
+                  <Text style={styles.detailSubvalue}>{formatDate(trip.start_date)}</Text>
+                </View>
+                <View style={styles.detailCard}>
+                  <Text style={styles.detailLabel}>End</Text>
+                  <Text style={styles.detailValue}>{formatShortDate(trip.end_date)}</Text>
+                  <Text style={styles.detailSubvalue}>{formatDate(trip.end_date)}</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.calendarStrip}
+                onPress={() => router.push({ pathname: '/trips/calendar', params: { tripId: trip.id } })}
+              >
+                <View style={styles.calendarStripIcon}>
+                  <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
+                </View>
+                <View style={styles.calendarStripContent}>
+                  <Text style={styles.calendarStripTitle}>Open Trip Calendar</Text>
+                  <Text style={styles.calendarStripText}>See all trip days, flights, hotel dates, and meetings in calendar view.</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+              </TouchableOpacity>
+              {!!trip.purpose && (
+                <View style={[styles.textBlock, styles.subsectionDivider]}>
+                  <Text style={styles.textBlockLabel}>Business Purpose</Text>
+                  <Text style={styles.purposeText}>{trip.purpose}</Text>
+                </View>
+              )}
+              {trip.meetings.length > 0 && (
+                <View style={[styles.textBlock, styles.subsectionDivider]}>
+                  <Text style={styles.textBlockLabel}>Meetings</Text>
+                  {trip.meetings.map((meeting, index) => (
+                    <View key={index} style={[styles.meetingItem, index > 0 && styles.meetingItemBorder]}>
+                      <Text style={styles.meetingTitle}>{meeting.title}</Text>
+                      <View style={styles.meetingMeta}>
+                        <Ionicons name="calendar-outline" size={14} color={COLORS.gray} />
+                        <Text style={styles.meetingText}>
+                          {formatDate(meeting.date)}{' '}
+                          {meeting.all_day
+                            ? '(All day)'
+                            : meeting.start_time && meeting.end_time
+                            ? `from ${meeting.start_time} to ${meeting.end_time}`
+                            : `at ${meeting.start_time ?? meeting.time ?? ''}`}
+                        </Text>
+                      </View>
+                      <View style={styles.meetingMeta}>
+                        <Ionicons name="location-outline" size={14} color={COLORS.gray} />
+                        <Text style={styles.meetingText}>{meeting.location}</Text>
+                      </View>
+                      {!!meeting.repeat && meeting.repeat !== 'Does not repeat' && (
+                        <View style={styles.meetingMeta}>
+                          <Ionicons name="repeat-outline" size={14} color={COLORS.gray} />
+                          <Text style={styles.meetingText}>{meeting.repeat}</Text>
+                        </View>
+                      )}
+                      {!!meeting.notes && <Text style={styles.meetingNote}>{meeting.notes}</Text>}
+                      {!!meeting.url && (
+                        <Text style={styles.meetingLink} numberOfLines={1}>
+                          {meeting.url}
+                        </Text>
+                      )}
+                      {!!meeting.todo_list?.length && (
+                        <Text style={styles.meetingTodo} numberOfLines={2}>
+                          To do: {meeting.todo_list.join(', ')}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+              {!!trip.notes && (
+                <View style={[styles.textBlock, styles.subsectionDivider]}>
+                  <Text style={styles.textBlockLabel}>Operational Notes</Text>
+                  <Text style={styles.purposeText}>{trip.notes}</Text>
+                </View>
+              )}
+              <TouchableOpacity style={[styles.supportStrip, styles.subsectionDivider]} onPress={() => router.push('/support/chat')}>
+                <View style={styles.supportStripIcon}>
+                  <Ionicons name="help-buoy-outline" size={18} color={COLORS.primary} />
+                </View>
+                <View style={styles.supportStripContent}>
+                  <Text style={styles.supportStripTitle}>Need help with this trip?</Text>
+                  <Text style={styles.supportStripText}>Open support for changes, exceptions, or traveler issues.</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -760,7 +906,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.black,
+    color: COLORS.white,
     marginBottom: 8,
   },
   summaryMeta: {
@@ -769,20 +915,20 @@ const styles = StyleSheet.create({
   },
   summaryDestination: {
     fontSize: 16,
-    color: COLORS.primary,
+    color: COLORS.white,
     fontWeight: '500',
     marginLeft: 6,
   },
   summarySubtitle: {
     marginTop: 10,
     fontSize: 14,
-    color: COLORS.gray,
+    color: 'rgba(255,255,255,0.82)',
   },
   summaryStats: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.background,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 12,
@@ -795,16 +941,16 @@ const styles = StyleSheet.create({
   summaryDivider: {
     width: 1,
     height: 30,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
   summaryStatValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.black,
+    color: COLORS.white,
   },
   summaryStatLabel: {
     fontSize: 11,
-    color: COLORS.gray,
+    color: 'rgba(255,255,255,0.82)',
     marginTop: 4,
   },
   scrollView: {
@@ -816,12 +962,12 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
   summaryCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.darkBlue,
     borderRadius: 22,
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(0,51,160,0.06)',
+    borderColor: 'rgba(255,255,255,0.08)',
     shadowColor: COLORS.darkBlue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -833,8 +979,64 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    color: COLORS.gray,
+    color: COLORS.lightBlue,
     marginBottom: 12,
+  },
+  quickActionsCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,51,160,0.06)',
+    shadowColor: COLORS.darkBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  quickActionsTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.black,
+  },
+  quickActionsSubtitle: {
+    fontSize: 12,
+    color: COLORS.gray,
+    lineHeight: 18,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  quickActionBtn: {
+    width: '48%',
+    backgroundColor: COLORS.background,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  quickActionIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+    flex: 1,
   },
   card: {
     backgroundColor: COLORS.white,
@@ -848,6 +1050,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 3,
+  },
+  accordionToggle: {
+    marginHorizontal: -2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1028,6 +1233,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  inlineAlerts: {
+    marginTop: 10,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+  },
+  inlineAlertsTitle: {
+    fontSize: 12,
+    color: COLORS.gray,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
   alertCard: {
     backgroundColor: '#FFF8E8',
     borderRadius: 18,
@@ -1086,6 +1304,27 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '600',
   },
+  subsectionBlock: {
+    marginTop: 6,
+  },
+  subsectionDivider: {
+    marginTop: 18,
+    paddingTop: 18,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+  },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.black,
+  },
+  subsectionDescription: {
+    fontSize: 13,
+    color: COLORS.gray,
+    lineHeight: 18,
+    marginTop: 4,
+    marginBottom: 14,
+  },
   flightCard: {
     backgroundColor: COLORS.background,
     borderRadius: 18,
@@ -1099,6 +1338,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  flightLegBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(45,103,255,0.10)',
+    marginBottom: 10,
+  },
+  flightLegBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   flightAirline: {
     fontSize: 15,
@@ -1324,6 +1578,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.gray,
     marginLeft: 6,
+  },
+  meetingNote: {
+    fontSize: 13,
+    color: COLORS.black,
+    lineHeight: 20,
+    marginTop: 10,
+  },
+  meetingLink: {
+    fontSize: 12,
+    color: COLORS.primary,
+    marginTop: 8,
+  },
+  meetingTodo: {
+    fontSize: 12,
+    color: COLORS.gray,
+    lineHeight: 18,
+    marginTop: 8,
   },
   purposeText: {
     fontSize: 14,
