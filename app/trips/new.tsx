@@ -301,8 +301,8 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingBottom: 20,
     shadowColor: COLORS.darkBlue,
     shadowOffset: { width: 0, height: 8 },

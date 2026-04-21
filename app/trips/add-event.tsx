@@ -603,8 +603,8 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 40 },
   headerContainer: {
     backgroundColor: COLORS.accent,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingBottom: 22,
     marginBottom: 18,
   },

@@ -204,8 +204,8 @@ const styles = StyleSheet.create({
   keyboardView: { flex: 1 },
   headerContainer: {
     backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingBottom: 18,
   },
   header: {
