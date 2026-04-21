@@ -150,10 +150,10 @@ export default function HomeScreen() {
   };
 
   const quickActions = [
-    { label: 'Open Case', helper: 'Create request', icon: 'add-circle', color: COLORS.primary, route: '/trips/new' },
-    { label: 'Support', helper: 'Get help fast', icon: 'chatbubble-ellipses', color: COLORS.mediumBlue, route: '/support/chat' },
-    { label: 'FAQ', helper: 'Browse answers', icon: 'help-circle', color: COLORS.lightBlue, route: '/support/faq' },
-    { label: 'Feedback', helper: 'Share notes', icon: 'document-text', color: COLORS.slate, route: '/profile/feedback' },
+    { label: 'Open Case', helper: 'Start a request', icon: 'add-circle', color: COLORS.primary, route: '/trips/new' },
+    { label: 'Support Page', helper: 'All support options', icon: 'help-buoy', color: COLORS.mediumBlue, route: '/support' },
+    { label: 'FAQ', helper: 'Find quick answers', icon: 'help-circle', color: COLORS.lightBlue, route: '/support/faq' },
+    { label: 'Chat w/Agent', helper: 'Talk to operations', icon: 'chatbubble-ellipses', color: COLORS.slate, route: '/support/chat' },
   ];
 
   const searchResults = useMemo(() => {
